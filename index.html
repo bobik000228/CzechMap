@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>CzechMap – Volení zástupci ČR</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0d0f14;
+      --surface: #161920;
+      --surface2: #1e2230;
+      --border: #2a2f40;
+      --text: #e2e4ec;
+      --muted: #6b7280;
+      --accent: #d4373f;
+      --radius: 10px;
+    }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+    /* ── Header ── */
+    header { background: var(--surface); border-bottom: 1px solid var(--border); padding: .7rem 1.2rem; position: sticky; top: 0; z-index: 300; }
+    .header-top { display: flex; align-items: center; gap: .8rem; margin-bottom: .55rem; }
+    .brand { font-size: 1.1rem; font-weight: 800; color: #fff; white-space: nowrap; }
+    .brand span { color: var(--accent); }
+    .header-filters { display: flex; gap: .5rem; flex-wrap: wrap; align-items: center; }
+    .header-filters input, .header-filters select {
+      background: var(--surface2); border: 1px solid var(--border); color: var(--text);
+      padding: .35rem .65rem; border-radius: 7px; font-size: .82rem; outline: none;
+    }
+    .header-filters input { flex: 1; min-width: 160px; }
+    .header-filters input:focus, .header-filters select:focus { border-color: var(--accent); }
+    .vtoggle { display: flex; gap: .25rem; margin-left: auto; flex-shrink: 0; }
+    .vbtn { padding: .3rem .75rem; border-radius: 6px; border: 1px solid var(--border); background: var(--surface2); color: var(--muted); cursor: pointer; font-size: .78rem; font-weight: 600; white-space: nowrap; }
+    .vbtn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .result-count { font-size: .75rem; color: var(--muted); white-space: nowrap; }
+
+    /* ── List view ── */
+    #listView { padding: 1.2rem; }
+    .level-section { margin-bottom: 2rem; }
+    .level-title { font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); margin-bottom: .75rem; padding-bottom: .35rem; border-bottom: 1px solid var(--border); }
+    .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: .8rem; }
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: .85rem; cursor: pointer; display: flex; gap: .7rem; align-items: flex-start; transition: border-color .15s, transform .15s; }
+    .card:hover { border-color: var(--accent); transform: translateY(-2px); }
+    .avatar { width: 52px; height: 52px; border-radius: 50%; object-fit: cover; flex-shrink: 0; background: var(--surface2); }
+    .avatar-placeholder { width: 52px; height: 52px; border-radius: 50%; background: var(--surface2); flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; }
+    .card-info { flex: 1; min-width: 0; }
+    .card-name { font-weight: 700; font-size: .9rem; color: #fff; line-height: 1.25; margin-bottom: .18rem; }
+    .card-role { font-size: .73rem; color: var(--muted); line-height: 1.3; margin-bottom: .35rem; }
+    .card-meta { display: flex; align-items: center; gap: .35rem; flex-wrap: wrap; }
+    .party-badge { font-size: .65rem; font-weight: 700; padding: .1rem .38rem; border-radius: 4px; color: #fff; white-space: nowrap; }
+    .since-tag { font-size: .65rem; color: var(--muted); }
+
+    /* ── Map view ── */
+    #mapView { display: none; }
+    #map { height: calc(100vh - 100px); min-height: 400px; }
+    .leaflet-popup-content-wrapper { background: #1e2230; border: 1px solid #2a2f40; border-radius: 10px; color: #e2e4ec; }
+    .leaflet-popup-tip { background: #1e2230; }
+    .popup-name { font-weight: 800; font-size: .95rem; color: #fff; margin-bottom: .15rem; }
+    .popup-role { font-size: .75rem; color: #aaa; margin-bottom: .35rem; }
+    .popup-link { font-size: .72rem; color: #60a5fa; text-decoration: none; }
+    .popup-link:hover { text-decoration: underline; }
+
+    /* ── Modal ── */
+    .modal-backdrop { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.8); z-index: 1000; align-items: center; justify-content: center; padding: 1rem; }
+    .modal-backdrop.open { display: flex; }
+    .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; max-width: 560px; width: 100%; max-height: 90vh; overflow-y: auto; position: relative; }
+    .modal-hero { display: flex; gap: 1rem; padding: 1.4rem; align-items: flex-start; }
+    .modal-avatar { width: 72px; height: 72px; border-radius: 50%; object-fit: cover; background: var(--surface2); flex-shrink: 0; }
+    .modal-avatar-ph { width: 72px; height: 72px; border-radius: 50%; background: var(--surface2); flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 2rem; }
+    .modal-title h2 { font-size: 1.25rem; font-weight: 800; color: #fff; margin-bottom: .25rem; }
+    .modal-title p { font-size: .82rem; color: var(--muted); line-height: 1.5; }
+    .modal-body { padding: 0 1.4rem 1.4rem; }
+    .modal-section-title { font-size: .68rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin: .9rem 0 .4rem; }
+    .modal-row { display: flex; justify-content: space-between; font-size: .82rem; padding: .3rem 0; border-bottom: 1px solid var(--border); }
+    .modal-row:last-child { border-bottom: none; }
+    .modal-row .label { color: var(--muted); }
+    .history-item { padding: .45rem 0; border-bottom: 1px solid var(--border); display: flex; gap: .5rem; align-items: baseline; }
+    .history-item:last-child { border-bottom: none; }
+    .hist-years { font-size: .72rem; color: var(--muted); white-space: nowrap; min-width: 85px; }
+    .hist-name { font-size: .82rem; font-weight: 600; }
+    .hist-party { font-size: .68rem; color: var(--muted); }
+    .modal-actions { display: flex; gap: .5rem; margin-top: 1rem; }
+    .btn { padding: .45rem 1rem; border-radius: 7px; font-size: .82rem; font-weight: 700; cursor: pointer; border: none; text-decoration: none; display: inline-flex; align-items: center; gap: .3rem; }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-secondary { background: var(--surface2); color: var(--text); }
+    .close-btn { position: absolute; top: .7rem; right: .7rem; background: rgba(0,0,0,.5); border: none; color: #fff; width: 28px; height: 28px; border-radius: 50%; cursor: pointer; font-size: .9rem; display: flex; align-items: center; justify-content: center; }
+
+    .empty { text-align: center; padding: 3rem; color: var(--muted); }
+    @media (max-width: 600px) { .cards { grid-template-columns: 1fr; } .header-filters { flex-wrap: wrap; } }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="header-top">
+    <div class="brand">🗺️ Czech<span>Map</span></div>
+    <div class="vtoggle">
+      <button class="vbtn active" id="btnList" onclick="setView('list')">☰ Seznam</button>
+      <button class="vbtn" id="btnMap" onclick="setView('map')">🗺 Mapa</button>
+    </div>
+  </div>
+  <div class="header-filters">
+    <input id="search" type="text" placeholder="Hledat osobu, roli, stranu…" oninput="render()"/>
+    <select id="levelFilter" onchange="render()">
+      <option value="">Všechny úrovně</option>
+      <option value="national">Národní</option>
+      <option value="regional">Krajská</option>
+    </select>
+    <select id="partyFilter" onchange="render()">
+      <option value="">Všechny strany</option>
+    </select>
+    <span class="result-count" id="count"></span>
+  </div>
+</header>
+
+<div id="listView"></div>
+<div id="mapView"><div id="map"></div></div>
+
+<!-- Modal -->
+<div class="modal-backdrop" id="modalBackdrop" onclick="closeModal(event)">
+  <div class="modal" id="modal">
+    <button class="close-btn" onclick="closeModal()">✕</button>
+    <div class="modal-hero">
+      <div id="mAvatar"></div>
+      <div class="modal-title">
+        <h2 id="mName"></h2>
+        <p id="mRole"></p>
+      </div>
+    </div>
+    <div class="modal-body">
+      <div id="mDetails"></div>
+      <div id="mHistory"></div>
+      <div class="modal-actions" id="mActions"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─────────────────────────────────────────────
+//  DATA
+// ─────────────────────────────────────────────
+
+const PARTY_COLORS = {
+  "ANO":              "#1565c0",
+  "ODS":              "#003e8a",
+  "KDU-ČSL":          "#f9a825",
+  "STAN":             "#43a047",
+  "Motoristé sobě":   "#e64a19",
+  "SPD":              "#8b0000",
+  "ČSSD":             "#c62828",
+  "SOCDEM":           "#c62828",
+  "Piráti":           "#424242",
+  "SLK":              "#0277bd",
+  "nestraník":        "#546e7a",
+};
+
+function partyColor(party) {
+  if (!party) return "#546e7a";
+  for (const [key, color] of Object.entries(PARTY_COLORS)) {
+    if (party.includes(key)) return color;
+  }
+  return "#546e7a";
+}
+
+function partyShort(party) {
+  if (!party) return "—";
+  const map = {
+    "nestraník (dříve ODS)": "nestr.",
+    "nestraník (dříve SOCDEM)": "nestr.",
+    "nestr. za ANO": "nestr./ANO",
+    "nestr. za SPD": "nestr./SPD",
+    "nestr. za Motoristé sobě": "nestr./MOT",
+    "SLK (Starostové pro Liberecký kraj)": "SLK",
+  };
+  return map[party] || party;
+}
+
+const PRESIDENT = {
+  id: "president",
+  name: "Petr Pavel",
+  role: "Prezident České republiky",
+  party: "nestraník",
+  level: "national",
+  since: "2023-03-09",
+  photo: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/39/Prezident_Petr_Pavel.jpg/330px-Prezident_Petr_Pavel.jpg",
+  link: "https://www.hrad.cz/cs/prezident-cr/soucasny-prezident-cr",
+  coords: [50.0903, 14.4001],
+  emoji: "🏛️",
+};
+
+const CABINET = [
+  { name: "Andrej Babiš",       role: "Předseda vlády",                                               party: "ANO",              since: "2025-12-09", photo: "https://vlada.gov.cz/assets/vlada/clenove-vlady/premier/zivotopis/Andrej-Babis.jpg",      link: "https://vlada.gov.cz/cz/clenove-vlady/premier/zivotopis/andrej-babis-223989/" },
+  { name: "Karel Havlíček",     role: "1. místopředseda vlády, ministr průmyslu a obchodu",           party: "ANO",              since: "2025-12-15", photo: "https://vlada.gov.cz/assets/vlada/clenove-vlady/Karel-Havlicek-nahled.jpg",               link: "https://vlada.gov.cz/cz/vlada/clenove-vlady/karel-havlicek-223969/" },
+  { name: "Alena Schillerová",  role: "Místopředsedkyně vlády, ministryně financí",                   party: "ANO",              since: "2025-12-15", photo: "https://vlada.gov.cz/assets/vlada/clenove-vlady/Alena-Schillerova-nahled.jpg",            link: "https://vlada.gov.cz/cz/vlada/clenove-vlady/alena-schillerova-223970/" },
+  { name: "Jaromír Zůna",       role: "Místopředseda vlády, ministr obrany",                          party: "nestr. za SPD",    since: "2025-12-15", photo: "https://vlada.gov.cz/assets/vlada/clenove-vlady/Jaromir-Zuna-nahled.jpg",                link: "https://vlada.gov.cz/cz/vlada/clenove-vlady/jaromir-zuna-223972/" },
+  { name: "Petr Macinka",       role: "Místopředseda vlády, ministr zahraničních věcí",               party: "Motoristé sobě",   since: "2025-12-15", photo: "https://vlada.gov.cz/assets/vlada/clenove-vlady/Petr_Macinka-nahled.jpg",                link: "https://vlada.gov.cz/cz/vlada/clenove-vlady/petr-macinka-223973/" },
+  { name: "Lubomír Metnar",     role: "Ministr vnitra",                                               party: "ANO",              since: "2025-12-15", photo: "https://vlada.gov.cz/assets/vlada/clenove-vlady/Metnar-Lubomir-nahled.jpg",               link: "https://vlada.gov.cz/cz/vlada/clenove-vlady/lubomir-metnar-223971/" },
+  { name: "Jeroným Tejc",       role: "Ministr spravedlnosti",                                        party: "nestr. za ANO",    since: "2025-12-15", photo: "https://vlada.gov.cz/assets/vlada/clenove-vlady/Jeronym-Tejc-nahled.jpg",                 link: "https://vlada.gov.cz/cz/vlada/clenove-vlady/jeronym-tejc-223974/" },
+  { name: "Ivan Bednárik",      role: "Ministr dopravy",                                              party: "nestr. za SPD",    since: "2025-12-15", photo: "https://vlada.gov.cz/assets/vlada/clenove-vlady/Ivan-Bednarik-nahled.jpg",                link: "https://vlada.gov.cz/cz/vlada/clenove-vlady/ivan-bednarik-223975/" },
+  { name: "Robert Plaga",       role: "Ministr školství, mládeže a tělovýchovy",                      party: "nestr. za ANO",    since: "2025-12-15", photo: "https://vlada.gov.cz/assets/vlada/clenove-vlady/Robert-Plaga-nahled.jpg",                 link: "https://vlada.gov.cz/cz/vlada/clenove-vlady/robert-plaga-223976/" },
+  { name: "Aleš Juchelka",      role: "Ministr práce a sociálních věcí",                              party: "ANO",              since: "2025-12-15", photo: "https://vlada.gov.cz/assets/vlada/clenove-vlady/Ales-Juchelka-nahled.jpg",                 link: "https://vlada.gov.cz/cz/vlada/clenove-vlady/ales-juchelka-223977/" },
+  { name: "Adam Vojtěch",       role: "Ministr zdravotnictví",                                        party: "nestr. za ANO",    since: "2025-12-15", photo: "https://vlada.gov.cz/assets/vlada/clenove-vlady/Adam-Vojtech-nahled.jpg",                  link: "https://vlada.gov.cz/cz/vlada/clenove-vlady/adam-vojtech-223978/" },
+  { name: "Martin Šebestyán",   role: "Ministr zemědělství",                                          party: "nestr. za SPD",    since: "2025-12-15", photo: "https://vlada.gov.cz/assets/vlada/clenove-vlady/Martin-Sebestyan-nahled.jpg",              link: "https://vlada.gov.cz/cz/vlada/clenove-vlady/martin-sebestyan-223982/" },
+  { name: "Zuzana Mrázová",     role: "Ministryně pro místní rozvoj",                                 party: "ANO",              since: "2025-12-15", photo: "https://vlada.gov.cz/assets/vlada/clenove-vlady/Zuzana-Mrazova-nahled.jpg",               link: "https://vlada.gov.cz/cz/vlada/clenove-vlady/zuzana-mrazova-223988/" },
+  { name: "Oto Klempíř",        role: "Ministr kultury",                                              party: "nestr. za Motoristé sobě", since: "2025-12-15", photo: "https://vlada.gov.cz/assets/vlada/clenove-vlady/Oto_Klempir-nahled.jpg",           link: "https://vlada.gov.cz/cz/vlada/clenove-vlady/oto-klempir-223983/" },
+  { name: "Boris Šťastný",      role: "Ministr pro sport, prevenci a zdraví",                         party: "Motoristé sobě",   since: "2025-12-15", photo: "https://vlada.gov.cz/assets/vlada/clenove-vlady/Boris-Stastny-nahled.jpg",                link: "https://vlada.gov.cz/cz/vlada/clenove-vlady/boris-stastny-223984/" },
+  { name: "Igor Červený",       role: "Ministr životního prostředí",                                  party: "Motoristé sobě",   since: "2026-02-23", photo: "https://vlada.gov.cz/assets/vlada/clenove-vlady/Igor-Cerveny-nahled.jpg",                 link: "https://vlada.gov.cz/cz/vlada/clenove-vlady/igor-cerveny-225455/" },
+].map(p => ({ ...p, level: "national", coords: [50.0856, 14.4247], emoji: "🏛️" }));
+
+const GOVERNORS = [
+  { name: "Bohuslav Svoboda",  role: "Primátor hl. m. Prahy",          party: "ODS",                            region: "Hlavní město Praha",      since: "2023-10-01", coords: [50.0755, 14.4378], link: "https://www.praha.eu/jnp/cz/volene_organy/primator/" },
+  { name: "Petra Pecková",     role: "Hejtmanka Středočeského kraje",   party: "STAN",                           region: "Středočeský kraj",        since: "2020-11-01", coords: [49.8714, 14.8761], link: "https://www.kr-stredocesky.cz/web/urad/hejtmanka" },
+  { name: "Martin Kuba",       role: "Hejtman Jihočeského kraje",       party: "nestraník (dříve ODS)",          region: "Jihočeský kraj",          since: "2020-11-01", coords: [49.1629, 14.3798], link: "https://www.kraj-jihocesky.cz/hejtman" },
+  { name: "Kamal Farhan",      role: "Hejtman Plzeňského kraje",        party: "ANO",                            region: "Plzeňský kraj",           since: "2024-11-01", coords: [49.7384, 13.3736], link: "https://www.plzensky-kraj.cz/hejtman" },
+  { name: "Petr Kubis",        role: "Hejtman Karlovarského kraje",     party: "ANO",                            region: "Karlovarský kraj",        since: "2025-01-01", coords: [50.2317, 12.8714], link: "https://www.kr-karlovarsky.cz/kraj/Stranky/hejtman.aspx" },
+  { name: "Richard Brabec",    role: "Hejtman Ústeckého kraje",         party: "ANO",                            region: "Ústecký kraj",            since: "2024-11-01", coords: [50.6111, 13.8304], link: "https://www.kr-ustecky.cz/hejtman" },
+  { name: "Martin Půta",       role: "Hejtman Libereckého kraje",       party: "SLK (Starostové pro Liberecký kraj)", region: "Liberecký kraj",  since: "2012-11-01", coords: [50.7663, 15.0543], link: "https://www.kraj-lbc.cz/hejtman" },
+  { name: "Petr Koleta",       role: "Hejtman Královéhradeckého kraje", party: "ANO",                            region: "Královéhradecký kraj",    since: "2024-11-01", coords: [50.2092, 15.8328], link: "https://www.kr-kralovehradecky.cz/hejtman" },
+  { name: "Martin Netolický",  role: "Hejtman Pardubického kraje",      party: "nestraník (dříve SOCDEM)",       region: "Pardubický kraj",         since: "2012-11-01", coords: [49.9445, 15.8928], link: "https://www.pardubickykraj.cz/hejtman" },
+  { name: "Martin Kukla",      role: "Hejtman Kraje Vysočina",          party: "ANO",                            region: "Kraj Vysočina",           since: "2024-11-01", coords: [49.4453, 15.5831], link: "https://www.kr-vysocina.cz/hejtman" },
+  { name: "Jan Grolich",       role: "Hejtman Jihomoravského kraje",    party: "KDU-ČSL",                        region: "Jihomoravský kraj",       since: "2020-11-01", coords: [49.0116, 16.6184], link: "https://www.kr-jihomoravsky.cz/hejtman" },
+  { name: "Ladislav Okleštěk", role: "Hejtman Olomouckého kraje",       party: "ANO",                            region: "Olomoucký kraj",          since: "2024-11-01", coords: [49.5938, 17.2509], link: "https://www.kr-olomoucky.cz/hejtman/" },
+  { name: "Josef Bělica",      role: "Hejtman Moravskoslezského kraje", party: "ANO",                            region: "Moravskoslezský kraj",    since: "2024-11-01", coords: [49.8209, 18.2625], link: "https://www.msk.cz/hejtman" },
+  { name: "Radim Holiš",       role: "Hejtman Zlínského kraje",         party: "ANO",                            region: "Zlínský kraj",            since: "2020-11-01", coords: [49.2244, 17.6636], link: "https://www.kr-zlinsky.cz/hejtman" },
+].map(p => ({ ...p, level: "regional", emoji: "🏢" }));
+
+const HISTORY = {
+  "Prezident ČR": [
+    { name: "Miloš Zeman",   party: "SPOZ / nestr.", years: "2013–2023", notes: "Dva mandáty, první přímo volený prezident" },
+    { name: "Václav Klaus",  party: "nestr. (ODS)",  years: "2003–2013", notes: "Dva mandáty, volen parlamentem" },
+    { name: "Václav Havel",  party: "nestraník",     years: "1993–2003", notes: "První prezident samostatné ČR" },
+  ],
+  "Předseda vlády": [
+    { name: "Petr Fiala",       party: "ODS",       years: "2021–2025" },
+    { name: "Andrej Babiš",     party: "ANO",       years: "2017–2021" },
+    { name: "Bohuslav Sobotka", party: "ČSSD",      years: "2014–2017" },
+    { name: "Jiří Rusnok",      party: "nestraník", years: "2013–2014", notes: "Úřednická vláda" },
+    { name: "Petr Nečas",       party: "ODS",       years: "2010–2013" },
+  ],
+};
+
+// All people as flat array for filtering
+const ALL_PEOPLE = [
+  { ...PRESIDENT, id: "president" },
+  ...CABINET.map((p, i) => ({ ...p, id: `cabinet-${i}` })),
+  ...GOVERNORS.map((p, i) => ({ ...p, id: `gov-${i}` })),
+];
+
+// ─────────────────────────────────────────────
+//  STATE & FILTERS
+// ─────────────────────────────────────────────
+
+let currentView = "list";
+let leafletMap = null;
+let selectedPerson = null;
+
+// Populate party filter
+const parties = [...new Set(ALL_PEOPLE.map(p => {
+  const c = partyColor(p.party);
+  return p.party;
+}))].sort();
+
+const partySelect = document.getElementById("partyFilter");
+parties.forEach(p => {
+  const o = document.createElement("option");
+  o.value = p;
+  o.textContent = partyShort(p);
+  partySelect.appendChild(o);
+});
+
+function getFiltered() {
+  const q = document.getElementById("search").value.toLowerCase().trim();
+  const level = document.getElementById("levelFilter").value;
+  const party = document.getElementById("partyFilter").value;
+  return ALL_PEOPLE.filter(p => {
+    const mQ = !q || p.name.toLowerCase().includes(q) || p.role.toLowerCase().includes(q) || p.party.toLowerCase().includes(q) || (p.region || "").toLowerCase().includes(q);
+    const mL = !level || p.level === level;
+    const mP = !party || p.party === party;
+    return mQ && mL && mP;
+  });
+}
+
+// ─────────────────────────────────────────────
+//  RENDERING
+// ─────────────────────────────────────────────
+
+function personCard(p) {
+  const color = partyColor(p.party);
+  const year = p.since ? p.since.slice(0, 4) : "";
+  const regionLabel = p.region ? `<div class="card-role" style="font-size:.68rem;color:#6b93a8">${p.region}</div>` : "";
+  const avatarHtml = p.photo
+    ? `<img class="avatar" src="${p.photo}" alt="" onerror="this.style.display='none'">`
+    : `<div class="avatar-placeholder">${p.emoji || "👤"}</div>`;
+  return `
+    <div class="card" onclick="openModal('${p.id}')">
+      ${avatarHtml}
+      <div class="card-info">
+        <div class="card-name">${p.name}</div>
+        <div class="card-role">${p.role}</div>
+        ${regionLabel}
+        <div class="card-meta">
+          <span class="party-badge" style="background:${color}">${partyShort(p.party)}</span>
+          ${year ? `<span class="since-tag">od ${year}</span>` : ""}
+        </div>
+      </div>
+    </div>`;
+}
+
+function renderList(filtered) {
+  const container = document.getElementById("listView");
+  const national = filtered.filter(p => p.level === "national");
+  const regional = filtered.filter(p => p.level === "regional");
+
+  const president = national.filter(p => p.id === "president");
+  const cabinet = national.filter(p => p.id !== "president");
+
+  let html = "";
+
+  if (president.length || cabinet.length) {
+    html += `<div class="level-section">
+      <div class="level-title">🇨🇿 Národní úroveň</div>
+      <div class="cards">
+        ${president.map(personCard).join("")}
+        ${cabinet.map(personCard).join("")}
+      </div>
+    </div>`;
+  }
+
+  if (regional.length) {
+    html += `<div class="level-section">
+      <div class="level-title">🏢 Krajská úroveň – hejtmani a primátor Prahy</div>
+      <div class="cards">${regional.map(personCard).join("")}</div>
+    </div>`;
+  }
+
+  if (!filtered.length) {
+    html = `<div class="empty">Žádné výsledky 🔍</div>`;
+  }
+
+  container.innerHTML = html;
+}
+
+function initMap() {
+  leafletMap = L.map("map", { center: [49.8, 15.5], zoom: 7 });
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    attribution: '© <a href="https://osm.org/copyright">OpenStreetMap</a>',
+    maxZoom: 19,
+  }).addTo(leafletMap);
+  renderMap(getFiltered());
+}
+
+function renderMap(filtered) {
+  if (!leafletMap) return;
+  leafletMap.eachLayer(l => { if (l instanceof L.Marker) leafletMap.removeLayer(l); });
+
+  // Group national-level people at one marker per coords cluster
+  const national = filtered.filter(p => p.level === "national");
+  if (national.length) {
+    const color = "#d4373f";
+    const icon = L.divIcon({
+      html: `<div style="width:16px;height:16px;border-radius:50%;background:${color};border:2.5px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.5)"></div>`,
+      className: "", iconAnchor: [8, 8],
+    });
+    const names = national.slice(0, 6).map(p => `<div class="popup-film" style="padding:.18rem 0;font-size:.78rem;cursor:pointer;color:#ccc" onclick="window._openPerson('${p.id}')">${p.name}</div>`).join("");
+    const more = national.length > 6 ? `<div style="font-size:.7rem;color:#888">+ ${national.length - 6} dalších…</div>` : "";
+    const popup = `<div><div class="popup-name">Národní vláda</div><div class="popup-role" style="margin-bottom:.35rem">Praha · ${national.length} osob</div>${names}${more}</div>`;
+    L.marker([50.08, 14.43], { icon }).addTo(leafletMap).bindPopup(popup, { maxWidth: 260 });
+  }
+
+  // Regional markers
+  filtered.filter(p => p.level === "regional").forEach(p => {
+    const color = partyColor(p.party);
+    const icon = L.divIcon({
+      html: `<div style="width:14px;height:14px;border-radius:50%;background:${color};border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.5)"></div>`,
+      className: "", iconAnchor: [7, 7],
+    });
+    const popup = `<div>
+      <div class="popup-name">${p.name}</div>
+      <div class="popup-role">${p.role}</div>
+      <div style="margin:.3rem 0"><span style="background:${color};color:#fff;font-size:.65rem;font-weight:700;padding:.1rem .35rem;border-radius:4px">${partyShort(p.party)}</span></div>
+      <a class="popup-link" href="${p.link}" target="_blank">Oficiální stránka →</a>
+    </div>`;
+    L.marker(p.coords, { icon }).addTo(leafletMap)
+      .bindPopup(popup, { maxWidth: 220 })
+      .on("click", () => openModal(p.id));
+  });
+
+  window._openPerson = id => {
+    document.querySelectorAll(".leaflet-popup-close-button").forEach(b => b.click());
+    openModal(id);
+  };
+}
+
+function render() {
+  const filtered = getFiltered();
+  document.getElementById("count").textContent = filtered.length + " / " + ALL_PEOPLE.length;
+  if (currentView === "list") renderList(filtered);
+  else if (currentView === "map" && leafletMap) renderMap(filtered);
+}
+
+function setView(v) {
+  currentView = v;
+  document.getElementById("listView").style.display = v === "list" ? "block" : "none";
+  document.getElementById("mapView").style.display  = v === "map"  ? "block" : "none";
+  document.getElementById("btnList").classList.toggle("active", v === "list");
+  document.getElementById("btnMap").classList.toggle("active", v === "map");
+  if (v === "map" && !leafletMap) setTimeout(initMap, 50);
+  else if (v === "map" && leafletMap) { leafletMap.invalidateSize(); renderMap(getFiltered()); }
+  else render();
+}
+
+// ─────────────────────────────────────────────
+//  MODAL
+// ─────────────────────────────────────────────
+
+function openModal(id) {
+  const p = ALL_PEOPLE.find(x => x.id === id);
+  if (!p) return;
+  selectedPerson = p;
+
+  // Avatar
+  const avatarEl = document.getElementById("mAvatar");
+  avatarEl.innerHTML = p.photo
+    ? `<img class="modal-avatar" src="${p.photo}" alt="" onerror="this.outerHTML='<div class=\\'modal-avatar-ph\\'>${p.emoji||'👤'}</div>'">`
+    : `<div class="modal-avatar-ph">${p.emoji || "👤"}</div>`;
+
+  document.getElementById("mName").textContent = p.name;
+  document.getElementById("mRole").textContent = p.role + (p.region ? ` · ${p.region}` : "");
+
+  // Details rows
+  const color = partyColor(p.party);
+  const sinceFormatted = p.since ? new Date(p.since).toLocaleDateString("cs-CZ", { day: "numeric", month: "long", year: "numeric" }) : "—";
+  document.getElementById("mDetails").innerHTML = `
+    <div class="modal-section-title">Informace</div>
+    <div class="modal-row"><span class="label">Strana</span><span><span class="party-badge" style="background:${color}">${partyShort(p.party)}</span></span></div>
+    <div class="modal-row"><span class="label">Ve funkci od</span><span>${sinceFormatted}</span></div>
+    ${p.region ? `<div class="modal-row"><span class="label">Kraj / obvod</span><span>${p.region}</span></div>` : ""}
+  `;
+
+  // History (only for positions that have it)
+  const historyKey = p.id === "president" ? "Prezident ČR"
+    : (p.role.toLowerCase().includes("předseda vlády") ? "Předseda vlády" : null);
+  const histEl = document.getElementById("mHistory");
+  if (historyKey && HISTORY[historyKey]) {
+    histEl.innerHTML = `<div class="modal-section-title">Předchůdci</div>` +
+      HISTORY[historyKey].map(h => `
+        <div class="history-item">
+          <span class="hist-years">${h.years}</span>
+          <span>
+            <span class="hist-name">${h.name}</span>
+            <span class="hist-party"> · ${h.party}</span>
+            ${h.notes ? `<br><span style="font-size:.7rem;color:var(--muted)">${h.notes}</span>` : ""}
+          </span>
+        </div>`).join("");
+  } else {
+    histEl.innerHTML = "";
+  }
+
+  // Actions
+  document.getElementById("mActions").innerHTML =
+    `<a class="btn btn-primary" href="${p.link}" target="_blank">Oficiální stránka ↗</a>`;
+
+  document.getElementById("modalBackdrop").classList.add("open");
+}
+
+function closeModal(e) {
+  if (e && e.target !== document.getElementById("modalBackdrop")) return;
+  document.getElementById("modalBackdrop").classList.remove("open");
+}
+document.addEventListener("keydown", e => { if (e.key === "Escape") document.getElementById("modalBackdrop").classList.remove("open"); });
+
+// ─────────────────────────────────────────────
+//  INIT
+// ─────────────────────────────────────────────
+render();
+</script>
+</body>
+</html>
