@@ -9,473 +9,825 @@
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
-      --bg: #0d0f14;
-      --surface: #161920;
-      --surface2: #1e2230;
-      --border: #2a2f40;
-      --text: #e2e4ec;
-      --muted: #6b7280;
-      --accent: #d4373f;
-      --radius: 10px;
+      --bg: #0d0f14; --surface: #161920; --surface2: #1e2230; --border: #2a2f40;
+      --text: #e2e4ec; --muted: #6b7280; --accent: #d4373f; --radius: 10px;
     }
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
 
-    /* ── Header ── */
-    header { background: var(--surface); border-bottom: 1px solid var(--border); padding: .7rem 1.2rem; position: sticky; top: 0; z-index: 300; }
-    .header-top { display: flex; align-items: center; gap: .8rem; margin-bottom: .55rem; }
-    .brand { font-size: 1.1rem; font-weight: 800; color: #fff; white-space: nowrap; }
+    /* ── Navigation ── */
+    header { background: var(--surface); border-bottom: 1px solid var(--border); padding: .6rem 1.2rem; position: sticky; top: 0; z-index: 300; }
+    .header-row { display: flex; align-items: center; gap: .8rem; flex-wrap: wrap; }
+    .brand { font-size: 1.1rem; font-weight: 800; color: #fff; white-space: nowrap; text-decoration: none; }
     .brand span { color: var(--accent); }
-    .header-filters { display: flex; gap: .5rem; flex-wrap: wrap; align-items: center; }
-    .header-filters input, .header-filters select {
-      background: var(--surface2); border: 1px solid var(--border); color: var(--text);
-      padding: .35rem .65rem; border-radius: 7px; font-size: .82rem; outline: none;
-    }
-    .header-filters input { flex: 1; min-width: 160px; }
-    .header-filters input:focus, .header-filters select:focus { border-color: var(--accent); }
-    .vtoggle { display: flex; gap: .25rem; margin-left: auto; flex-shrink: 0; }
-    .vbtn { padding: .3rem .75rem; border-radius: 6px; border: 1px solid var(--border); background: var(--surface2); color: var(--muted); cursor: pointer; font-size: .78rem; font-weight: 600; white-space: nowrap; }
-    .vbtn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
-    .result-count { font-size: .75rem; color: var(--muted); white-space: nowrap; }
+    nav { display: flex; gap: .2rem; flex-wrap: wrap; }
+    .nav-btn { padding: .32rem .8rem; border-radius: 6px; border: 1px solid transparent; background: none; color: var(--muted); cursor: pointer; font-size: .82rem; font-weight: 600; white-space: nowrap; }
+    .nav-btn:hover { color: var(--text); background: var(--surface2); }
+    .nav-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .search-bar { flex: 1; min-width: 180px; background: var(--surface2); border: 1px solid var(--border); color: var(--text); padding: .35rem .7rem; border-radius: 7px; font-size: .82rem; outline: none; }
+    .search-bar:focus { border-color: var(--accent); }
 
-    /* ── List view ── */
-    #listView { padding: 1.2rem; }
-    .level-section { margin-bottom: 2rem; }
-    .level-title { font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); margin-bottom: .75rem; padding-bottom: .35rem; border-bottom: 1px solid var(--border); }
-    .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: .8rem; }
-    .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: .85rem; cursor: pointer; display: flex; gap: .7rem; align-items: flex-start; transition: border-color .15s, transform .15s; }
+    /* ── Layout ── */
+    .view { display: none; }
+    .view.active { display: block; }
+    .split-layout { display: grid; grid-template-columns: 280px 1fr; min-height: calc(100vh - 56px); }
+    .sidebar { border-right: 1px solid var(--border); padding: .8rem; overflow-y: auto; max-height: calc(100vh - 56px); position: sticky; top: 56px; }
+    .main-panel { padding: 1.2rem; overflow-y: auto; }
+
+    /* ── Sidebar items ── */
+    .sidebar-group-title { font-size: .65rem; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); padding: .5rem .4rem .25rem; }
+    .sidebar-item { padding: .45rem .6rem; border-radius: 7px; cursor: pointer; font-size: .83rem; display: flex; align-items: center; gap: .5rem; transition: background .1s; }
+    .sidebar-item:hover { background: var(--surface2); }
+    .sidebar-item.active { background: var(--accent); color: #fff; }
+    .sidebar-item .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+    /* ── Timeline ── */
+    .timeline { position: relative; padding-left: 1.4rem; }
+    .timeline::before { content: ''; position: absolute; left: .35rem; top: .4rem; bottom: .4rem; width: 2px; background: var(--border); }
+    .tl-item { position: relative; margin-bottom: 1rem; }
+    .tl-dot { position: absolute; left: -1.4rem; top: .35rem; width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--bg); }
+    .tl-current .tl-dot { box-shadow: 0 0 0 3px rgba(212,55,63,.35); }
+    .tl-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: .7rem .9rem; }
+    .tl-card:hover { border-color: var(--border); }
+    .tl-current .tl-card { border-left: 3px solid var(--accent); }
+    .tl-years { font-size: .72rem; color: var(--muted); margin-bottom: .25rem; }
+    .tl-name { font-size: .95rem; font-weight: 700; color: #fff; margin-bottom: .15rem; cursor: pointer; }
+    .tl-name:hover { color: var(--accent); }
+    .tl-party-row { display: flex; align-items: center; gap: .4rem; flex-wrap: wrap; }
+    .party-badge { font-size: .64rem; font-weight: 700; padding: .1rem .38rem; border-radius: 4px; color: #fff; white-space: nowrap; }
+    .tl-source { font-size: .68rem; color: #4a90d9; margin-top: .3rem; }
+    .tl-source a { color: #4a90d9; text-decoration: none; }
+    .tl-source a:hover { text-decoration: underline; }
+    .tl-notes { font-size: .72rem; color: var(--muted); margin-top: .2rem; font-style: italic; }
+
+    /* ── People grid ── */
+    .people-filters { display: flex; gap: .5rem; margin-bottom: 1rem; flex-wrap: wrap; align-items: center; }
+    .people-filters select { background: var(--surface2); border: 1px solid var(--border); color: var(--text); padding: .35rem .65rem; border-radius: 7px; font-size: .82rem; outline: none; }
+    .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: .75rem; }
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: .8rem; cursor: pointer; display: flex; gap: .65rem; align-items: flex-start; transition: border-color .15s, transform .15s; }
     .card:hover { border-color: var(--accent); transform: translateY(-2px); }
-    .avatar { width: 52px; height: 52px; border-radius: 50%; object-fit: cover; flex-shrink: 0; background: var(--surface2); }
-    .avatar-placeholder { width: 52px; height: 52px; border-radius: 50%; background: var(--surface2); flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; }
-    .card-info { flex: 1; min-width: 0; }
-    .card-name { font-weight: 700; font-size: .9rem; color: #fff; line-height: 1.25; margin-bottom: .18rem; }
-    .card-role { font-size: .73rem; color: var(--muted); line-height: 1.3; margin-bottom: .35rem; }
-    .card-meta { display: flex; align-items: center; gap: .35rem; flex-wrap: wrap; }
-    .party-badge { font-size: .65rem; font-weight: 700; padding: .1rem .38rem; border-radius: 4px; color: #fff; white-space: nowrap; }
-    .since-tag { font-size: .65rem; color: var(--muted); }
+    .avatar { width: 48px; height: 48px; border-radius: 50%; object-fit: cover; flex-shrink: 0; background: var(--surface2); }
+    .avatar-ph { width: 48px; height: 48px; border-radius: 50%; background: var(--surface2); flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; }
+    .card-info .name { font-weight: 700; font-size: .88rem; color: #fff; margin-bottom: .15rem; }
+    .card-info .role { font-size: .72rem; color: var(--muted); line-height: 1.3; margin-bottom: .3rem; }
+    .card-info .meta { display: flex; gap: .3rem; flex-wrap: wrap; align-items: center; }
 
-    /* ── Map view ── */
-    #mapView { display: none; }
-    #map { height: calc(100vh - 100px); min-height: 400px; }
+    /* ── Parties ── */
+    .party-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: .8rem; margin-bottom: 1.5rem; }
+    .party-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: .9rem; cursor: pointer; transition: border-color .15s; }
+    .party-card:hover, .party-card.active { border-color: var(--accent); }
+    .party-name { font-weight: 700; font-size: 1rem; margin-bottom: .25rem; }
+    .party-stats { font-size: .75rem; color: var(--muted); }
+    .party-detail { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem; margin-top: .5rem; }
+    .office-row { display: flex; justify-content: space-between; align-items: center; padding: .38rem 0; border-bottom: 1px solid var(--border); font-size: .82rem; }
+    .office-row:last-child { border-bottom: none; }
+    .office-name { color: var(--muted); }
+    .office-person { font-weight: 600; color: #fff; cursor: pointer; }
+    .office-person:hover { color: var(--accent); }
+
+    /* ── Map ── */
+    #map { height: calc(100vh - 56px); }
     .leaflet-popup-content-wrapper { background: #1e2230; border: 1px solid #2a2f40; border-radius: 10px; color: #e2e4ec; }
     .leaflet-popup-tip { background: #1e2230; }
-    .popup-name { font-weight: 800; font-size: .95rem; color: #fff; margin-bottom: .15rem; }
-    .popup-role { font-size: .75rem; color: #aaa; margin-bottom: .35rem; }
-    .popup-link { font-size: .72rem; color: #60a5fa; text-decoration: none; }
-    .popup-link:hover { text-decoration: underline; }
 
-    /* ── Modal ── */
-    .modal-backdrop { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.8); z-index: 1000; align-items: center; justify-content: center; padding: 1rem; }
-    .modal-backdrop.open { display: flex; }
-    .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; max-width: 560px; width: 100%; max-height: 90vh; overflow-y: auto; position: relative; }
-    .modal-hero { display: flex; gap: 1rem; padding: 1.4rem; align-items: flex-start; }
-    .modal-avatar { width: 72px; height: 72px; border-radius: 50%; object-fit: cover; background: var(--surface2); flex-shrink: 0; }
-    .modal-avatar-ph { width: 72px; height: 72px; border-radius: 50%; background: var(--surface2); flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 2rem; }
-    .modal-title h2 { font-size: 1.25rem; font-weight: 800; color: #fff; margin-bottom: .25rem; }
-    .modal-title p { font-size: .82rem; color: var(--muted); line-height: 1.5; }
-    .modal-body { padding: 0 1.4rem 1.4rem; }
-    .modal-section-title { font-size: .68rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin: .9rem 0 .4rem; }
-    .modal-row { display: flex; justify-content: space-between; font-size: .82rem; padding: .3rem 0; border-bottom: 1px solid var(--border); }
-    .modal-row:last-child { border-bottom: none; }
-    .modal-row .label { color: var(--muted); }
-    .history-item { padding: .45rem 0; border-bottom: 1px solid var(--border); display: flex; gap: .5rem; align-items: baseline; }
-    .history-item:last-child { border-bottom: none; }
-    .hist-years { font-size: .72rem; color: var(--muted); white-space: nowrap; min-width: 85px; }
-    .hist-name { font-size: .82rem; font-weight: 600; }
-    .hist-party { font-size: .68rem; color: var(--muted); }
-    .modal-actions { display: flex; gap: .5rem; margin-top: 1rem; }
-    .btn { padding: .45rem 1rem; border-radius: 7px; font-size: .82rem; font-weight: 700; cursor: pointer; border: none; text-decoration: none; display: inline-flex; align-items: center; gap: .3rem; }
-    .btn-primary { background: var(--accent); color: #fff; }
-    .btn-secondary { background: var(--surface2); color: var(--text); }
-    .close-btn { position: absolute; top: .7rem; right: .7rem; background: rgba(0,0,0,.5); border: none; color: #fff; width: 28px; height: 28px; border-radius: 50%; cursor: pointer; font-size: .9rem; display: flex; align-items: center; justify-content: center; }
+    /* ── Section headers ── */
+    .section-header { display: flex; align-items: baseline; gap: .75rem; margin-bottom: 1.2rem; }
+    .section-header h1 { font-size: 1.3rem; font-weight: 800; color: #fff; }
+    .section-header p { font-size: .78rem; color: var(--muted); }
 
-    .empty { text-align: center; padding: 3rem; color: var(--muted); }
-    @media (max-width: 600px) { .cards { grid-template-columns: 1fr; } .header-filters { flex-wrap: wrap; } }
+    /* ── About ── */
+    .about-section { max-width: 760px; }
+    .about-section h2 { font-size: 1rem; font-weight: 700; margin: 1.4rem 0 .6rem; color: #fff; }
+    .about-section p { font-size: .85rem; line-height: 1.7; color: #bbb; margin-bottom: .6rem; }
+    .sources-table { width: 100%; border-collapse: collapse; font-size: .82rem; margin-top: .5rem; }
+    .sources-table th { text-align: left; padding: .4rem .6rem; border-bottom: 2px solid var(--border); color: var(--muted); font-size: .72rem; text-transform: uppercase; letter-spacing: .05em; }
+    .sources-table td { padding: .4rem .6rem; border-bottom: 1px solid var(--border); }
+    .sources-table a { color: #4a90d9; text-decoration: none; }
+    .sources-table a:hover { text-decoration: underline; }
+    .badge-pill { display: inline-block; font-size: .65rem; font-weight: 700; padding: .1rem .38rem; border-radius: 10px; background: var(--surface2); color: var(--muted); margin-left: .3rem; }
+
+    .empty { padding: 3rem; text-align: center; color: var(--muted); }
+    .count-note { font-size: .75rem; color: var(--muted); margin-bottom: 1rem; }
+    @media (max-width: 720px) { .split-layout { grid-template-columns: 1fr; } .sidebar { max-height: none; position: static; border-right: none; border-bottom: 1px solid var(--border); } }
   </style>
 </head>
 <body>
 
 <header>
-  <div class="header-top">
-    <div class="brand">🗺️ Czech<span>Map</span></div>
-    <div class="vtoggle">
-      <button class="vbtn active" id="btnList" onclick="setView('list')">☰ Seznam</button>
-      <button class="vbtn" id="btnMap" onclick="setView('map')">🗺 Mapa</button>
-    </div>
-  </div>
-  <div class="header-filters">
-    <input id="search" type="text" placeholder="Hledat osobu, roli, stranu…" oninput="render()"/>
-    <select id="levelFilter" onchange="render()">
-      <option value="">Všechny úrovně</option>
-      <option value="national">Národní</option>
-      <option value="regional">Krajská</option>
-    </select>
-    <select id="partyFilter" onchange="render()">
-      <option value="">Všechny strany</option>
-    </select>
-    <span class="result-count" id="count"></span>
+  <div class="header-row">
+    <a class="brand" href="#" onclick="return false">🗺️ Czech<span>Map</span></a>
+    <nav id="mainNav">
+      <button class="nav-btn active" onclick="showTab('offices')">🏛️ Úřady</button>
+      <button class="nav-btn" onclick="showTab('people')">👤 Osoby</button>
+      <button class="nav-btn" onclick="showTab('parties')">🎭 Strany</button>
+      <button class="nav-btn" onclick="showTab('map')">🗺 Mapa</button>
+      <button class="nav-btn" onclick="showTab('about')">ℹ️ O projektu</button>
+    </nav>
+    <input class="search-bar" id="globalSearch" placeholder="Hledat…" oninput="onSearch(this.value)"/>
   </div>
 </header>
 
-<div id="listView"></div>
-<div id="mapView"><div id="map"></div></div>
-
-<!-- Modal -->
-<div class="modal-backdrop" id="modalBackdrop" onclick="closeModal(event)">
-  <div class="modal" id="modal">
-    <button class="close-btn" onclick="closeModal()">✕</button>
-    <div class="modal-hero">
-      <div id="mAvatar"></div>
-      <div class="modal-title">
-        <h2 id="mName"></h2>
-        <p id="mRole"></p>
-      </div>
+<!-- TAB: ÚŘADY -->
+<div id="tab-offices" class="view active">
+  <div class="split-layout">
+    <div class="sidebar" id="officesSidebar"></div>
+    <div class="main-panel" id="officesPanel">
+      <div class="empty">← Vyberte úřad ze seznamu</div>
     </div>
-    <div class="modal-body">
-      <div id="mDetails"></div>
-      <div id="mHistory"></div>
-      <div class="modal-actions" id="mActions"></div>
+  </div>
+</div>
+
+<!-- TAB: OSOBY -->
+<div id="tab-people" class="view">
+  <div class="main-panel">
+    <div class="people-filters">
+      <select id="levelFilter" onchange="renderPeople()">
+        <option value="">Všechny úrovně</option>
+        <option value="national">Národní</option>
+        <option value="regional">Krajská</option>
+      </select>
+      <select id="partyPeopleFilter" onchange="renderPeople()">
+        <option value="">Všechny strany</option>
+      </select>
+      <span class="count-note" id="peopleCount"></span>
+    </div>
+    <div class="cards" id="peopleGrid"></div>
+  </div>
+</div>
+
+<!-- TAB: STRANY -->
+<div id="tab-parties" class="view">
+  <div class="main-panel">
+    <div class="section-header">
+      <h1>Strany</h1>
+      <p>Aktuálně obsazené úřady podle politické strany</p>
+    </div>
+    <div class="party-grid" id="partyGrid"></div>
+    <div id="partyDetail"></div>
+  </div>
+</div>
+
+<!-- TAB: MAPA -->
+<div id="tab-map" class="view">
+  <div id="map"></div>
+</div>
+
+<!-- TAB: O PROJEKTU -->
+<div id="tab-about" class="view">
+  <div class="main-panel">
+    <div class="about-section">
+      <div class="section-header"><h1>O projektu CzechMap</h1></div>
+      <p>CzechMap je otevřený přehled volených a jmenovaných veřejných činitelů České republiky. Cílem je poskytnout přehledné a ověřitelné informace o aktuálních i historických obsazeních klíčových úřadů.</p>
+
+      <h2>Co zahrnujeme</h2>
+      <p>Aktuálně jsou zahrnuty: prezident, vláda (předseda a ministři) a hejtmani krajů včetně primátora Prahy. Historická data jsou dostupná pro prezidenty a předsedy vlády od roku 1993, pro ministry od cca 2010.</p>
+
+      <h2>Metodologie</h2>
+      <p>Data jsou ručně sestavována z oficiálních zdrojů (vlada.gov.cz, hrad.cz, stránky krajů) a ověřována prostřednictvím Wikipedie. Každý záznam uvádí odkaz na zdrojový dokument. Datum „od" odpovídá datu jmenování do funkce, datum „do" datu odvolání nebo konce mandátu.</p>
+      <p>Stranická příslušnost je vedena ke dni jmenování do dané funkce. Označení <em>nestr.</em> označuje nestraníka — bez formálního členství v politické straně.</p>
+
+      <h2>Zdroje dat</h2>
+      <table class="sources-table">
+        <thead><tr><th>Zdroj</th><th>Typ dat</th><th>URL</th></tr></thead>
+        <tbody>
+          <tr><td>Vláda ČR</td><td>Aktuální kabinet, ministři</td><td><a href="https://vlada.gov.cz/cz/clenove-vlady/" target="_blank">vlada.gov.cz</a></td></tr>
+          <tr><td>Hrad.cz</td><td>Prezident ČR</td><td><a href="https://www.hrad.cz/cs/prezident-cr" target="_blank">hrad.cz</a></td></tr>
+          <tr><td>Asociace krajů ČR</td><td>Hejtmani krajů</td><td><a href="https://www.asociacekraju.cz/" target="_blank">asociacekraju.cz</a></td></tr>
+          <tr><td>Magistrát hl. m. Prahy</td><td>Primátor Prahy</td><td><a href="https://www.praha.eu" target="_blank">praha.eu</a></td></tr>
+          <tr><td>Wikipedie (cs)</td><td>Historická data, přehledové seznamy</td><td><a href="https://cs.wikipedia.org" target="_blank">cs.wikipedia.org</a></td></tr>
+        </tbody>
+      </table>
+
+      <h2>Aktuálnost</h2>
+      <p>Data byla naposledy aktualizována: <strong>března 2026</strong>. Projekt je ve vývoji — historická data pro ministerskými portfolio a regionální úroveň budou postupně doplňována.</p>
+
+      <h2>Hlášení chyb</h2>
+      <p>Pokud najdete chybu nebo nepřesnost, projekt je open-source na <a href="https://github.com/bobik000228/CzechMap" target="_blank" style="color:#4a90d9">GitHub</a>.</p>
     </div>
   </div>
 </div>
 
 <script>
-// ─────────────────────────────────────────────
-//  DATA
-// ─────────────────────────────────────────────
+"use strict";
+// ═══════════════════════════════════════════════════════════════
+//  DATA MODEL
+//  OFFICES  — metadata about each public office
+//  PEOPLE   — biographical info about each person
+//  TERMS    — who held which office, when, and source
+// ═══════════════════════════════════════════════════════════════
 
-const PARTY_COLORS = {
-  "ANO":              "#1565c0",
-  "ODS":              "#003e8a",
-  "KDU-ČSL":          "#f9a825",
-  "STAN":             "#43a047",
-  "Motoristé sobě":   "#e64a19",
-  "SPD":              "#8b0000",
-  "ČSSD":             "#c62828",
-  "SOCDEM":           "#c62828",
-  "Piráti":           "#424242",
-  "SLK":              "#0277bd",
-  "nestraník":        "#546e7a",
+const SOURCES = {
+  vlada:    { name: "vlada.gov.cz",    url: "https://vlada.gov.cz/cz/clenove-vlady/" },
+  hrad:     { name: "hrad.cz",         url: "https://www.hrad.cz/cs/prezident-cr" },
+  wiki:     { name: "Wikipedie",        url: "https://cs.wikipedia.org/wiki/Vl%C3%A1da_%C4%8Cesk%C3%A9_republiky" },
+  wikiPM:   { name: "Wikipedie – Předsedové vlád ČR", url: "https://cs.wikipedia.org/wiki/Seznam_p%C5%99edsed%C5%AF_vl%C3%A1d_%C4%8Cesk%C3%A9_republiky" },
+  wikiPres: { name: "Wikipedie – Prezidenti ČR",      url: "https://cs.wikipedia.org/wiki/Prezident_%C4%8Cesk%C3%A9_republiky" },
+  wikiMin:     { name: "Wikipedie – seznam ministrů",      url: "https://cs.wikipedia.org/wiki/Vl%C3%A1da_%C4%8Cesk%C3%A9_republiky" },
+  wikiFinMin:  { name: "Wikipedie – ministři financí",    url: "https://cs.wikipedia.org/wiki/Seznam_ministr%C5%AF_financ%C3%AD_%C4%8Cesk%C3%A9_republiky" },
+  wikiFgnMin:  { name: "Wikipedie – ministři zahraničí",  url: "https://cs.wikipedia.org/wiki/Seznam_ministr%C5%AF_zahrani%C4%8Dn%C3%ADch_v%C4%9Bc%C3%AD_%C4%8Cesk%C3%A9_republiky" },
+  wikiIntMin:  { name: "Wikipedie – ministři vnitra",     url: "https://cs.wikipedia.org/wiki/Seznam_ministr%C5%AF_vnitra_%C4%8Cesk%C3%A9_republiky" },
+  wikiDefMin:  { name: "Wikipedie – ministři obrany",     url: "https://cs.wikipedia.org/wiki/Seznam_ministr%C5%AF_obrany_%C4%8Cesk%C3%A9_republiky" },
+  wikiHltMin:  { name: "Wikipedie – ministři zdravotnictví", url: "https://cs.wikipedia.org/wiki/Seznam_ministr%C5%AF_zdravotnictv%C3%AD_%C4%8Cesk%C3%A9_republiky" },
+  kraj_pr:  { name: "Praha – primátor",  url: "https://www.praha.eu/jnp/cz/volene_organy/primator/" },
+  kraj_sc:  { name: "Středočeský kraj",  url: "https://www.kr-stredocesky.cz/web/urad/hejtmanka" },
+  kraj_jc:  { name: "Jihočeský kraj",    url: "https://www.kraj-jihocesky.cz/hejtman" },
+  kraj_pl:  { name: "Plzeňský kraj",     url: "https://www.plzensky-kraj.cz/hejtman" },
+  kraj_kv:  { name: "Karlovarský kraj",  url: "https://www.kr-karlovarsky.cz/kraj/Stranky/hejtman.aspx" },
+  kraj_ul:  { name: "Ústecký kraj",      url: "https://www.kr-ustecky.cz/hejtman" },
+  kraj_lb:  { name: "Liberecký kraj",    url: "https://www.kraj-lbc.cz/hejtman" },
+  kraj_hk:  { name: "Královéhradecký kraj", url: "https://www.kr-kralovehradecky.cz/hejtman" },
+  kraj_pa:  { name: "Pardubický kraj",   url: "https://www.pardubickykraj.cz/hejtman" },
+  kraj_vy:  { name: "Kraj Vysočina",     url: "https://www.kr-vysocina.cz/hejtman" },
+  kraj_jm:  { name: "Jihomoravský kraj", url: "https://www.kr-jihomoravsky.cz/hejtman" },
+  kraj_ol:  { name: "Olomoucký kraj",    url: "https://www.kr-olomoucky.cz/hejtman/" },
+  kraj_msk: { name: "Moravskoslezský kraj", url: "https://www.msk.cz/hejtman" },
+  kraj_zl:  { name: "Zlínský kraj",      url: "https://www.kr-zlinsky.cz/hejtman" },
 };
 
-function partyColor(party) {
-  if (!party) return "#546e7a";
-  for (const [key, color] of Object.entries(PARTY_COLORS)) {
-    if (party.includes(key)) return color;
-  }
-  return "#546e7a";
-}
-
-function partyShort(party) {
-  if (!party) return "—";
-  const map = {
-    "nestraník (dříve ODS)": "nestr.",
-    "nestraník (dříve SOCDEM)": "nestr.",
-    "nestr. za ANO": "nestr./ANO",
-    "nestr. za SPD": "nestr./SPD",
-    "nestr. za Motoristé sobě": "nestr./MOT",
-    "SLK (Starostové pro Liberecký kraj)": "SLK",
-  };
-  return map[party] || party;
-}
-
-const PRESIDENT = {
-  id: "president",
-  name: "Petr Pavel",
-  role: "Prezident České republiky",
-  party: "nestraník",
-  level: "national",
-  since: "2023-03-09",
-  photo: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/39/Prezident_Petr_Pavel.jpg/330px-Prezident_Petr_Pavel.jpg",
-  link: "https://www.hrad.cz/cs/prezident-cr/soucasny-prezident-cr",
-  coords: [50.0903, 14.4001],
-  emoji: "🏛️",
-};
-
-const CABINET = [
-  { name: "Andrej Babiš",       role: "Předseda vlády",                                               party: "ANO",              since: "2025-12-09", photo: "https://vlada.gov.cz/assets/vlada/clenove-vlady/premier/zivotopis/Andrej-Babis.jpg",      link: "https://vlada.gov.cz/cz/clenove-vlady/premier/zivotopis/andrej-babis-223989/" },
-  { name: "Karel Havlíček",     role: "1. místopředseda vlády, ministr průmyslu a obchodu",           party: "ANO",              since: "2025-12-15", photo: "https://vlada.gov.cz/assets/vlada/clenove-vlady/Karel-Havlicek-nahled.jpg",               link: "https://vlada.gov.cz/cz/vlada/clenove-vlady/karel-havlicek-223969/" },
-  { name: "Alena Schillerová",  role: "Místopředsedkyně vlády, ministryně financí",                   party: "ANO",              since: "2025-12-15", photo: "https://vlada.gov.cz/assets/vlada/clenove-vlady/Alena-Schillerova-nahled.jpg",            link: "https://vlada.gov.cz/cz/vlada/clenove-vlady/alena-schillerova-223970/" },
-  { name: "Jaromír Zůna",       role: "Místopředseda vlády, ministr obrany",                          party: "nestr. za SPD",    since: "2025-12-15", photo: "https://vlada.gov.cz/assets/vlada/clenove-vlady/Jaromir-Zuna-nahled.jpg",                link: "https://vlada.gov.cz/cz/vlada/clenove-vlady/jaromir-zuna-223972/" },
-  { name: "Petr Macinka",       role: "Místopředseda vlády, ministr zahraničních věcí",               party: "Motoristé sobě",   since: "2025-12-15", photo: "https://vlada.gov.cz/assets/vlada/clenove-vlady/Petr_Macinka-nahled.jpg",                link: "https://vlada.gov.cz/cz/vlada/clenove-vlady/petr-macinka-223973/" },
-  { name: "Lubomír Metnar",     role: "Ministr vnitra",                                               party: "ANO",              since: "2025-12-15", photo: "https://vlada.gov.cz/assets/vlada/clenove-vlady/Metnar-Lubomir-nahled.jpg",               link: "https://vlada.gov.cz/cz/vlada/clenove-vlady/lubomir-metnar-223971/" },
-  { name: "Jeroným Tejc",       role: "Ministr spravedlnosti",                                        party: "nestr. za ANO",    since: "2025-12-15", photo: "https://vlada.gov.cz/assets/vlada/clenove-vlady/Jeronym-Tejc-nahled.jpg",                 link: "https://vlada.gov.cz/cz/vlada/clenove-vlady/jeronym-tejc-223974/" },
-  { name: "Ivan Bednárik",      role: "Ministr dopravy",                                              party: "nestr. za SPD",    since: "2025-12-15", photo: "https://vlada.gov.cz/assets/vlada/clenove-vlady/Ivan-Bednarik-nahled.jpg",                link: "https://vlada.gov.cz/cz/vlada/clenove-vlady/ivan-bednarik-223975/" },
-  { name: "Robert Plaga",       role: "Ministr školství, mládeže a tělovýchovy",                      party: "nestr. za ANO",    since: "2025-12-15", photo: "https://vlada.gov.cz/assets/vlada/clenove-vlady/Robert-Plaga-nahled.jpg",                 link: "https://vlada.gov.cz/cz/vlada/clenove-vlady/robert-plaga-223976/" },
-  { name: "Aleš Juchelka",      role: "Ministr práce a sociálních věcí",                              party: "ANO",              since: "2025-12-15", photo: "https://vlada.gov.cz/assets/vlada/clenove-vlady/Ales-Juchelka-nahled.jpg",                 link: "https://vlada.gov.cz/cz/vlada/clenove-vlady/ales-juchelka-223977/" },
-  { name: "Adam Vojtěch",       role: "Ministr zdravotnictví",                                        party: "nestr. za ANO",    since: "2025-12-15", photo: "https://vlada.gov.cz/assets/vlada/clenove-vlady/Adam-Vojtech-nahled.jpg",                  link: "https://vlada.gov.cz/cz/vlada/clenove-vlady/adam-vojtech-223978/" },
-  { name: "Martin Šebestyán",   role: "Ministr zemědělství",                                          party: "nestr. za SPD",    since: "2025-12-15", photo: "https://vlada.gov.cz/assets/vlada/clenove-vlady/Martin-Sebestyan-nahled.jpg",              link: "https://vlada.gov.cz/cz/vlada/clenove-vlady/martin-sebestyan-223982/" },
-  { name: "Zuzana Mrázová",     role: "Ministryně pro místní rozvoj",                                 party: "ANO",              since: "2025-12-15", photo: "https://vlada.gov.cz/assets/vlada/clenove-vlady/Zuzana-Mrazova-nahled.jpg",               link: "https://vlada.gov.cz/cz/vlada/clenove-vlady/zuzana-mrazova-223988/" },
-  { name: "Oto Klempíř",        role: "Ministr kultury",                                              party: "nestr. za Motoristé sobě", since: "2025-12-15", photo: "https://vlada.gov.cz/assets/vlada/clenove-vlady/Oto_Klempir-nahled.jpg",           link: "https://vlada.gov.cz/cz/vlada/clenove-vlady/oto-klempir-223983/" },
-  { name: "Boris Šťastný",      role: "Ministr pro sport, prevenci a zdraví",                         party: "Motoristé sobě",   since: "2025-12-15", photo: "https://vlada.gov.cz/assets/vlada/clenove-vlady/Boris-Stastny-nahled.jpg",                link: "https://vlada.gov.cz/cz/vlada/clenove-vlady/boris-stastny-223984/" },
-  { name: "Igor Červený",       role: "Ministr životního prostředí",                                  party: "Motoristé sobě",   since: "2026-02-23", photo: "https://vlada.gov.cz/assets/vlada/clenove-vlady/Igor-Cerveny-nahled.jpg",                 link: "https://vlada.gov.cz/cz/vlada/clenove-vlady/igor-cerveny-225455/" },
-].map(p => ({ ...p, level: "national", coords: [50.0856, 14.4247], emoji: "🏛️" }));
-
-const GOVERNORS = [
-  { name: "Bohuslav Svoboda",  role: "Primátor hl. m. Prahy",          party: "ODS",                            region: "Hlavní město Praha",      since: "2023-10-01", coords: [50.0755, 14.4378], link: "https://www.praha.eu/jnp/cz/volene_organy/primator/" },
-  { name: "Petra Pecková",     role: "Hejtmanka Středočeského kraje",   party: "STAN",                           region: "Středočeský kraj",        since: "2020-11-01", coords: [49.8714, 14.8761], link: "https://www.kr-stredocesky.cz/web/urad/hejtmanka" },
-  { name: "Martin Kuba",       role: "Hejtman Jihočeského kraje",       party: "nestraník (dříve ODS)",          region: "Jihočeský kraj",          since: "2020-11-01", coords: [49.1629, 14.3798], link: "https://www.kraj-jihocesky.cz/hejtman" },
-  { name: "Kamal Farhan",      role: "Hejtman Plzeňského kraje",        party: "ANO",                            region: "Plzeňský kraj",           since: "2024-11-01", coords: [49.7384, 13.3736], link: "https://www.plzensky-kraj.cz/hejtman" },
-  { name: "Petr Kubis",        role: "Hejtman Karlovarského kraje",     party: "ANO",                            region: "Karlovarský kraj",        since: "2025-01-01", coords: [50.2317, 12.8714], link: "https://www.kr-karlovarsky.cz/kraj/Stranky/hejtman.aspx" },
-  { name: "Richard Brabec",    role: "Hejtman Ústeckého kraje",         party: "ANO",                            region: "Ústecký kraj",            since: "2024-11-01", coords: [50.6111, 13.8304], link: "https://www.kr-ustecky.cz/hejtman" },
-  { name: "Martin Půta",       role: "Hejtman Libereckého kraje",       party: "SLK (Starostové pro Liberecký kraj)", region: "Liberecký kraj",  since: "2012-11-01", coords: [50.7663, 15.0543], link: "https://www.kraj-lbc.cz/hejtman" },
-  { name: "Petr Koleta",       role: "Hejtman Královéhradeckého kraje", party: "ANO",                            region: "Královéhradecký kraj",    since: "2024-11-01", coords: [50.2092, 15.8328], link: "https://www.kr-kralovehradecky.cz/hejtman" },
-  { name: "Martin Netolický",  role: "Hejtman Pardubického kraje",      party: "nestraník (dříve SOCDEM)",       region: "Pardubický kraj",         since: "2012-11-01", coords: [49.9445, 15.8928], link: "https://www.pardubickykraj.cz/hejtman" },
-  { name: "Martin Kukla",      role: "Hejtman Kraje Vysočina",          party: "ANO",                            region: "Kraj Vysočina",           since: "2024-11-01", coords: [49.4453, 15.5831], link: "https://www.kr-vysocina.cz/hejtman" },
-  { name: "Jan Grolich",       role: "Hejtman Jihomoravského kraje",    party: "KDU-ČSL",                        region: "Jihomoravský kraj",       since: "2020-11-01", coords: [49.0116, 16.6184], link: "https://www.kr-jihomoravsky.cz/hejtman" },
-  { name: "Ladislav Okleštěk", role: "Hejtman Olomouckého kraje",       party: "ANO",                            region: "Olomoucký kraj",          since: "2024-11-01", coords: [49.5938, 17.2509], link: "https://www.kr-olomoucky.cz/hejtman/" },
-  { name: "Josef Bělica",      role: "Hejtman Moravskoslezského kraje", party: "ANO",                            region: "Moravskoslezský kraj",    since: "2024-11-01", coords: [49.8209, 18.2625], link: "https://www.msk.cz/hejtman" },
-  { name: "Radim Holiš",       role: "Hejtman Zlínského kraje",         party: "ANO",                            region: "Zlínský kraj",            since: "2020-11-01", coords: [49.2244, 17.6636], link: "https://www.kr-zlinsky.cz/hejtman" },
-].map(p => ({ ...p, level: "regional", emoji: "🏢" }));
-
-const HISTORY = {
-  "Prezident ČR": [
-    { name: "Miloš Zeman",   party: "SPOZ / nestr.", years: "2013–2023", notes: "Dva mandáty, první přímo volený prezident" },
-    { name: "Václav Klaus",  party: "nestr. (ODS)",  years: "2003–2013", notes: "Dva mandáty, volen parlamentem" },
-    { name: "Václav Havel",  party: "nestraník",     years: "1993–2003", notes: "První prezident samostatné ČR" },
-  ],
-  "Předseda vlády": [
-    { name: "Petr Fiala",       party: "ODS",       years: "2021–2025" },
-    { name: "Andrej Babiš",     party: "ANO",       years: "2017–2021" },
-    { name: "Bohuslav Sobotka", party: "ČSSD",      years: "2014–2017" },
-    { name: "Jiří Rusnok",      party: "nestraník", years: "2013–2014", notes: "Úřednická vláda" },
-    { name: "Petr Nečas",       party: "ODS",       years: "2010–2013" },
-  ],
-};
-
-// All people as flat array for filtering
-const ALL_PEOPLE = [
-  { ...PRESIDENT, id: "president" },
-  ...CABINET.map((p, i) => ({ ...p, id: `cabinet-${i}` })),
-  ...GOVERNORS.map((p, i) => ({ ...p, id: `gov-${i}` })),
+const OFFICES = [
+  // National — head of state & government
+  { id: "president",   name: "Prezident ČR",                     level: "national", group: "Hlavní funkce",   emoji: "🏛️", coords: [50.0903, 14.4001], description: "Hlava státu. Od roku 2013 volený přímo občany, dříve parlamentem." },
+  { id: "pm",          name: "Předseda vlády",                   level: "national", group: "Hlavní funkce",   emoji: "🏛️", coords: [50.0856, 14.4247] },
+  // Ministries (alphabetical by portfolio)
+  { id: "min_finance",   name: "Ministr financí",                level: "national", group: "Ministerstva",    emoji: "💰", coords: [50.0856, 14.4247] },
+  { id: "min_foreign",   name: "Ministr zahraničních věcí",      level: "national", group: "Ministerstva",    emoji: "🌍", coords: [50.0856, 14.4247] },
+  { id: "min_interior",  name: "Ministr vnitra",                 level: "national", group: "Ministerstva",    emoji: "🔒", coords: [50.0856, 14.4247] },
+  { id: "min_defense",   name: "Ministr obrany",                 level: "national", group: "Ministerstva",    emoji: "⚔️",  coords: [50.0856, 14.4247] },
+  { id: "min_health",    name: "Ministr zdravotnictví",          level: "national", group: "Ministerstva",    emoji: "🏥", coords: [50.0856, 14.4247] },
+  { id: "min_industry",  name: "Ministr průmyslu a obchodu",     level: "national", group: "Ministerstva",    emoji: "⚙️",  coords: [50.0856, 14.4247] },
+  { id: "min_transport", name: "Ministr dopravy",                level: "national", group: "Ministerstva",    emoji: "🚆", coords: [50.0856, 14.4247] },
+  { id: "min_justice",   name: "Ministr spravedlnosti",          level: "national", group: "Ministerstva",    emoji: "⚖️",  coords: [50.0856, 14.4247] },
+  { id: "min_edu",       name: "Ministr školství",               level: "national", group: "Ministerstva",    emoji: "🎓", coords: [50.0856, 14.4247] },
+  { id: "min_labor",     name: "Ministr práce a soc. věcí",      level: "national", group: "Ministerstva",    emoji: "👷", coords: [50.0856, 14.4247] },
+  { id: "min_agri",      name: "Ministr zemědělství",            level: "national", group: "Ministerstva",    emoji: "🌾", coords: [50.0856, 14.4247] },
+  { id: "min_culture",   name: "Ministr kultury",                level: "national", group: "Ministerstva",    emoji: "🎭", coords: [50.0856, 14.4247] },
+  { id: "min_dev",       name: "Ministryně pro místní rozvoj",   level: "national", group: "Ministerstva",    emoji: "🏗️",  coords: [50.0856, 14.4247] },
+  { id: "min_env",       name: "Ministr životního prostředí",    level: "national", group: "Ministerstva",    emoji: "🌿", coords: [50.0856, 14.4247] },
+  { id: "min_sport",     name: "Ministr pro sport a prevenci",   level: "national", group: "Ministerstva",    emoji: "🏅", coords: [50.0856, 14.4247] },
+  // Regional
+  { id: "gov_pr",  name: "Primátor Prahy",             region: "Hlavní město Praha",      level: "regional", group: "Hejtmani a primátor", emoji: "🏙️", coords: [50.0755, 14.4378] },
+  { id: "gov_sc",  name: "Hejtman Středočeského kraje",region: "Středočeský kraj",        level: "regional", group: "Hejtmani a primátor", emoji: "🏢", coords: [49.8714, 14.8761] },
+  { id: "gov_jc",  name: "Hejtman Jihočeského kraje",  region: "Jihočeský kraj",          level: "regional", group: "Hejtmani a primátor", emoji: "🏢", coords: [49.1629, 14.3798] },
+  { id: "gov_pl",  name: "Hejtman Plzeňského kraje",   region: "Plzeňský kraj",           level: "regional", group: "Hejtmani a primátor", emoji: "🏢", coords: [49.7384, 13.3736] },
+  { id: "gov_kv",  name: "Hejtman Karlovarského kraje",region: "Karlovarský kraj",        level: "regional", group: "Hejtmani a primátor", emoji: "🏢", coords: [50.2317, 12.8714] },
+  { id: "gov_ul",  name: "Hejtman Ústeckého kraje",    region: "Ústecký kraj",            level: "regional", group: "Hejtmani a primátor", emoji: "🏢", coords: [50.6111, 13.8304] },
+  { id: "gov_lb",  name: "Hejtman Libereckého kraje",  region: "Liberecký kraj",          level: "regional", group: "Hejtmani a primátor", emoji: "🏢", coords: [50.7663, 15.0543] },
+  { id: "gov_hk",  name: "Hejtman Královéhradeckého kraje", region: "Královéhradecký kraj", level: "regional", group: "Hejtmani a primátor", emoji: "🏢", coords: [50.2092, 15.8328] },
+  { id: "gov_pa",  name: "Hejtman Pardubického kraje", region: "Pardubický kraj",         level: "regional", group: "Hejtmani a primátor", emoji: "🏢", coords: [49.9445, 15.8928] },
+  { id: "gov_vy",  name: "Hejtman Kraje Vysočina",     region: "Kraj Vysočina",           level: "regional", group: "Hejtmani a primátor", emoji: "🏢", coords: [49.4453, 15.5831] },
+  { id: "gov_jm",  name: "Hejtman Jihomoravského kraje",region: "Jihomoravský kraj",      level: "regional", group: "Hejtmani a primátor", emoji: "🏢", coords: [49.0116, 16.6184] },
+  { id: "gov_ol",  name: "Hejtman Olomouckého kraje",  region: "Olomoucký kraj",          level: "regional", group: "Hejtmani a primátor", emoji: "🏢", coords: [49.5938, 17.2509] },
+  { id: "gov_msk", name: "Hejtman Moravskoslezského kraje", region: "Moravskoslezský kraj", level: "regional", group: "Hejtmani a primátor", emoji: "🏢", coords: [49.8209, 18.2625] },
+  { id: "gov_zl",  name: "Hejtman Zlínského kraje",    region: "Zlínský kraj",            level: "regional", group: "Hejtmani a primátor", emoji: "🏢", coords: [49.2244, 17.6636] },
 ];
 
-// ─────────────────────────────────────────────
-//  STATE & FILTERS
-// ─────────────────────────────────────────────
+const PEOPLE = {
+  // National — present
+  petr_pavel:        { name: "Petr Pavel",        photo: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/39/Prezident_Petr_Pavel.jpg/330px-Prezident_Petr_Pavel.jpg", link: "https://www.hrad.cz/cs/prezident-cr/soucasny-prezident-cr" },
+  andrej_babis:      { name: "Andrej Babiš",       photo: "https://vlada.gov.cz/assets/vlada/clenove-vlady/premier/zivotopis/Andrej-Babis.jpg",        link: "https://vlada.gov.cz/cz/clenove-vlady/premier/zivotopis/andrej-babis-223989/" },
+  karel_havlicek:    { name: "Karel Havlíček",     photo: "https://vlada.gov.cz/assets/vlada/clenove-vlady/Karel-Havlicek-nahled.jpg",                  link: "https://vlada.gov.cz/cz/vlada/clenove-vlady/karel-havlicek-223969/" },
+  alena_schillerova: { name: "Alena Schillerová",  photo: "https://vlada.gov.cz/assets/vlada/clenove-vlady/Alena-Schillerova-nahled.jpg",               link: "https://vlada.gov.cz/cz/vlada/clenove-vlady/alena-schillerova-223970/" },
+  jaromir_zuna:      { name: "Jaromír Zůna",       photo: "https://vlada.gov.cz/assets/vlada/clenove-vlady/Jaromir-Zuna-nahled.jpg",                    link: "https://vlada.gov.cz/cz/vlada/clenove-vlady/jaromir-zuna-223972/" },
+  petr_macinka:      { name: "Petr Macinka",        photo: "https://vlada.gov.cz/assets/vlada/clenove-vlady/Petr_Macinka-nahled.jpg",                   link: "https://vlada.gov.cz/cz/vlada/clenove-vlady/petr-macinka-223973/" },
+  lubomir_metnar:    { name: "Lubomír Metnar",     photo: "https://vlada.gov.cz/assets/vlada/clenove-vlady/Metnar-Lubomir-nahled.jpg",                  link: "https://vlada.gov.cz/cz/vlada/clenove-vlady/lubomir-metnar-223971/" },
+  jeronym_tejc:      { name: "Jeroným Tejc",       photo: "https://vlada.gov.cz/assets/vlada/clenove-vlady/Jeronym-Tejc-nahled.jpg",                    link: "https://vlada.gov.cz/cz/vlada/clenove-vlady/jeronym-tejc-223974/" },
+  ivan_bednarik:     { name: "Ivan Bednárik",      photo: "https://vlada.gov.cz/assets/vlada/clenove-vlady/Ivan-Bednarik-nahled.jpg",                   link: "https://vlada.gov.cz/cz/vlada/clenove-vlady/ivan-bednarik-223975/" },
+  robert_plaga:      { name: "Robert Plaga",        photo: "https://vlada.gov.cz/assets/vlada/clenove-vlady/Robert-Plaga-nahled.jpg",                   link: "https://vlada.gov.cz/cz/vlada/clenove-vlady/robert-plaga-223976/" },
+  ales_juchelka:     { name: "Aleš Juchelka",      photo: "https://vlada.gov.cz/assets/vlada/clenove-vlady/Ales-Juchelka-nahled.jpg",                   link: "https://vlada.gov.cz/cz/vlada/clenove-vlady/ales-juchelka-223977/" },
+  adam_vojtech:      { name: "Adam Vojtěch",        photo: "https://vlada.gov.cz/assets/vlada/clenove-vlady/Adam-Vojtech-nahled.jpg",                   link: "https://vlada.gov.cz/cz/vlada/clenove-vlady/adam-vojtech-223978/" },
+  martin_sebestyan:  { name: "Martin Šebestyán",   photo: "https://vlada.gov.cz/assets/vlada/clenove-vlady/Martin-Sebestyan-nahled.jpg",                link: "https://vlada.gov.cz/cz/vlada/clenove-vlady/martin-sebestyan-223982/" },
+  zuzana_mrazova:    { name: "Zuzana Mrázová",     photo: "https://vlada.gov.cz/assets/vlada/clenove-vlady/Zuzana-Mrazova-nahled.jpg",                  link: "https://vlada.gov.cz/cz/vlada/clenove-vlady/zuzana-mrazova-223988/" },
+  oto_klempir:       { name: "Oto Klempíř",         photo: "https://vlada.gov.cz/assets/vlada/clenove-vlady/Oto_Klempir-nahled.jpg",                    link: "https://vlada.gov.cz/cz/vlada/clenove-vlady/oto-klempir-223983/" },
+  boris_stastny:     { name: "Boris Šťastný",       photo: "https://vlada.gov.cz/assets/vlada/clenove-vlady/Boris-Stastny-nahled.jpg",                  link: "https://vlada.gov.cz/cz/vlada/clenove-vlady/boris-stastny-223984/" },
+  igor_cerveny:      { name: "Igor Červený",        photo: "https://vlada.gov.cz/assets/vlada/clenove-vlady/Igor-Cerveny-nahled.jpg",                   link: "https://vlada.gov.cz/cz/vlada/clenove-vlady/igor-cerveny-225455/" },
+  // National — historical
+  milos_zeman:       { name: "Miloš Zeman",         photo: null, link: "https://cs.wikipedia.org/wiki/Milo%C5%A1_Zeman" },
+  vaclav_klaus:      { name: "Václav Klaus",         photo: null, link: "https://cs.wikipedia.org/wiki/V%C3%A1clav_Klaus" },
+  vaclav_havel:      { name: "Václav Havel",         photo: null, link: "https://cs.wikipedia.org/wiki/V%C3%A1clav_Havel" },
+  petr_fiala:        { name: "Petr Fiala",           photo: null, link: "https://cs.wikipedia.org/wiki/Petr_Fiala" },
+  bohdan_sobotka:    { name: "Bohuslav Sobotka",     photo: null, link: "https://cs.wikipedia.org/wiki/Bohuslav_Sobotka" },
+  jiri_rusnok:       { name: "Jiří Rusnok",          photo: null, link: "https://cs.wikipedia.org/wiki/Ji%C5%99%C3%AD_Rusnok" },
+  petr_necas:        { name: "Petr Nečas",           photo: null, link: "https://cs.wikipedia.org/wiki/Petr_Ne%C4%8Das" },
+  jan_fischer:       { name: "Jan Fischer",           photo: null, link: "https://cs.wikipedia.org/wiki/Jan_Fischer_(politik)" },
+  mirek_topolanek:   { name: "Mirek Topolánek",      photo: null, link: "https://cs.wikipedia.org/wiki/Mirek_Topol%C3%A1nek" },
+  jiri_paroubek:     { name: "Jiří Paroubek",        photo: null, link: "https://cs.wikipedia.org/wiki/Ji%C5%99%C3%AD_Paroubek" },
+  stanislav_gross:   { name: "Stanislav Gross",      photo: null, link: "https://cs.wikipedia.org/wiki/Stanislav_Gross" },
+  vladimir_spidla:   { name: "Vladimír Špidla",      photo: null, link: "https://cs.wikipedia.org/wiki/Vladim%C3%ADr_%C5%A0pidla" },
+  josef_tosovsky:    { name: "Josef Tošovský",        photo: null, link: "https://cs.wikipedia.org/wiki/Josef_To%C5%A1ovsk%C3%BD" },
+  zbynek_stanjura:   { name: "Zbyněk Stanjura",      photo: null, link: "https://cs.wikipedia.org/wiki/Zby%C5%88ek_Stanjura" },
+  zdenek_bakala:     { name: "Ivan Pilip",            photo: null, link: "https://cs.wikipedia.org/wiki/Ivan_Pilip" },
+  jan_hamacek:       { name: "Jan Hamáček",           photo: null, link: "https://cs.wikipedia.org/wiki/Jan_Ham%C3%A1%C4%8Dek" },
+  vit_rakusan:       { name: "Vít Rakušan",           photo: null, link: "https://cs.wikipedia.org/wiki/V%C3%ADt_Raku%C5%A1an" },
+  jana_cernochova:   { name: "Jana Černochová",       photo: null, link: "https://cs.wikipedia.org/wiki/Jana_%C4%8Cernochov%C3%A1" },
+  jakub_kulhanek:    { name: "Jakub Kulhánek",        photo: null, link: "https://cs.wikipedia.org/wiki/Jakub_Kulh%C3%A1nek" },
+  tomas_petricek:    { name: "Tomáš Petříček",        photo: null, link: "https://cs.wikipedia.org/wiki/Tom%C3%A1%C5%A1_Pet%C5%99%C3%AD%C4%8Dek" },
+  jan_lipavsky:      { name: "Jan Lipavský",          photo: null, link: "https://cs.wikipedia.org/wiki/Jan_Lipavsk%C3%BD" },
+  vlastimil_valek:   { name: "Vlastimil Válek",       photo: null, link: "https://cs.wikipedia.org/wiki/Vlastimil_V%C3%A1lek" },
+  // Regional
+  bohuslav_svoboda:  { name: "Bohuslav Svoboda",  photo: "https://upload.wikimedia.org/wikipedia/commons/thumb/5/55/Bohuslav_Svoboda_2022.jpg/250px-Bohuslav_Svoboda_2022.jpg", link: "https://www.praha.eu/jnp/cz/volene_organy/primator/" },
+  petra_peckova:     { name: "Petra Pecková",      photo: null, link: "https://www.kr-stredocesky.cz/web/urad/hejtmanka" },
+  martin_kuba:       { name: "Martin Kuba",         photo: null, link: "https://www.kraj-jihocesky.cz/hejtman" },
+  kamal_farhan:      { name: "Kamal Farhan",        photo: null, link: "https://www.plzensky-kraj.cz/hejtman" },
+  petr_kubis:        { name: "Petr Kubis",          photo: null, link: "https://www.kr-karlovarsky.cz/kraj/Stranky/hejtman.aspx" },
+  richard_brabec:    { name: "Richard Brabec",      photo: null, link: "https://www.kr-ustecky.cz/hejtman" },
+  martin_puta:       { name: "Martin Půta",         photo: null, link: "https://www.kraj-lbc.cz/hejtman" },
+  petr_koleta:       { name: "Petr Koleta",         photo: null, link: "https://www.kr-kralovehradecky.cz/hejtman" },
+  martin_netolicky:  { name: "Martin Netolický",    photo: null, link: "https://www.pardubickykraj.cz/hejtman" },
+  martin_kukla:      { name: "Martin Kukla",        photo: null, link: "https://www.kr-vysocina.cz/hejtman" },
+  jan_grolich:       { name: "Jan Grolich",         photo: null, link: "https://www.kr-jihomoravsky.cz/hejtman" },
+  ladislav_oklestek: { name: "Ladislav Okleštěk",  photo: null, link: "https://www.kr-olomoucky.cz/hejtman/" },
+  josef_belica:      { name: "Josef Bělica",        photo: null, link: "https://www.msk.cz/hejtman" },
+  // Historical – finance ministers
+  ivo_svoboda:       { name: "Ivo Svoboda",          photo: null, link: "https://cs.wikipedia.org/wiki/Ivo_Svoboda_(politik)" },
+  pavel_mertlik:     { name: "Pavel Mertlík",         photo: null, link: "https://cs.wikipedia.org/wiki/Pavel_Mertl%C3%ADk" },
+  vlastimil_tlusty:  { name: "Vlastimil Tlustý",      photo: null, link: "https://cs.wikipedia.org/wiki/Vlastimil_Tlust%C3%BD" },
+  miroslav_kalousek: { name: "Miroslav Kalousek",     photo: null, link: "https://cs.wikipedia.org/wiki/Miroslav_Kalousek" },
+  eduard_janota:     { name: "Eduard Janota",          photo: null, link: "https://cs.wikipedia.org/wiki/Eduard_Janota" },
+  ivan_pilny:        { name: "Ivan Pilný",             photo: null, link: "https://cs.wikipedia.org/wiki/Ivan_Piln%C3%BD_(politik)" },
+  // Historical – foreign ministers
+  karel_schwarzenberg: { name: "Karel Schwarzenberg", photo: null, link: "https://cs.wikipedia.org/wiki/Karel_Schwarzenberg" },
+  jan_kohout:        { name: "Jan Kohout",             photo: null, link: "https://cs.wikipedia.org/wiki/Jan_Kohout_(diplomat)" },
+  lubomir_zaoralek:  { name: "Lubomír Zaorálek",      photo: null, link: "https://cs.wikipedia.org/wiki/Lubom%C3%ADr_Zaor%C3%A1lek" },
+  martin_stropnicky: { name: "Martin Stropnický",     photo: null, link: "https://cs.wikipedia.org/wiki/Martin_Stropnick%C3%BD" },
+  // Historical – interior ministers
+  ivan_langer:       { name: "Ivan Langer",            photo: null, link: "https://cs.wikipedia.org/wiki/Ivan_Langer" },
+  martin_pecina:     { name: "Martin Pecina",          photo: null, link: "https://cs.wikipedia.org/wiki/Martin_Pecina" },
+  radek_john:        { name: "Radek John",             photo: null, link: "https://cs.wikipedia.org/wiki/Radek_John" },
+  jan_kubice:        { name: "Jan Kubice",             photo: null, link: "https://cs.wikipedia.org/wiki/Jan_Kubice" },
+  milan_chovanec:    { name: "Milan Chovanec",         photo: null, link: "https://cs.wikipedia.org/wiki/Milan_Chovanec" },
+  // Historical – defense ministers
+  martin_bartak:     { name: "Martin Barták",          photo: null, link: "https://cs.wikipedia.org/wiki/Martin_Bart%C3%A1k" },
+  alexandr_vondra:   { name: "Alexandr Vondra",        photo: null, link: "https://cs.wikipedia.org/wiki/Alexandr_Vondra" },
+  karolina_peake:    { name: "Karolína Peake",         photo: null, link: "https://cs.wikipedia.org/wiki/Karol%C3%ADna_Peake" },
+  vlastimil_picek:   { name: "Vlastimil Picek",        photo: null, link: "https://cs.wikipedia.org/wiki/Vlastimil_Picek" },
+  karla_slechtova:   { name: "Karla Šlechtová",        photo: null, link: "https://cs.wikipedia.org/wiki/Karla_%C5%A0lechtov%C3%A1" },
+  // Historical – health ministers
+  miloslav_ludvik:   { name: "Miloslav Ludvík",        photo: null, link: "https://cs.wikipedia.org/wiki/Miloslav_Ludv%C3%ADk" },
+  roman_prymula:     { name: "Roman Prymula",          photo: null, link: "https://cs.wikipedia.org/wiki/Roman_Prymula" },
+  jan_blatny:        { name: "Jan Blatný",             photo: null, link: "https://cs.wikipedia.org/wiki/Jan_Blatn%C3%BD_(politik)" },
+  petr_arenberger:   { name: "Petr Arenberger",        photo: null, link: "https://cs.wikipedia.org/wiki/Petr_Arenberger" },
+  vlastimil_valek:   { name: "Vlastimil Válek",        photo: null, link: "https://cs.wikipedia.org/wiki/Vlastimil_V%C3%A1lek" },
+  radim_holis:       { name: "Radim Holiš",         photo: null, link: "https://www.kr-zlinsky.cz/hejtman" },
+};
 
-let currentView = "list";
+// TERMS: each entry = one person holding one office for one period
+// Sources: reference key from SOURCES object
+const TERMS = [
+  // ── Prezident ──────────────────────────────────────────────
+  { office: "president", person: "petr_pavel",   party: "nestraník",       from: "2023-03-09", to: null,       sources: ["hrad", "wikiPres"], notes: "Přímo volený, 2. kolo voleb: 28. 1. 2023" },
+  { office: "president", person: "milos_zeman",  party: "nestr. (SPOZ)",   from: "2013-03-08", to: "2023-03-09", sources: ["wikiPres"], notes: "2 mandáty (2013–2018, 2018–2023). První přímo volený prezident ČR." },
+  { office: "president", person: "vaclav_klaus", party: "nestr. (ODS)",    from: "2003-03-07", to: "2013-03-07", sources: ["wikiPres"], notes: "2 mandáty (2003–2008, 2008–2013). Volen parlamentem." },
+  { office: "president", person: "vaclav_havel", party: "nestraník",       from: "1993-01-02", to: "2003-02-02", sources: ["wikiPres"], notes: "2 mandáty (1993–1998, 1998–2003). První prezident samostatné ČR. Volen parlamentem." },
+
+  // ── Předseda vlády ─────────────────────────────────────────
+  { office: "pm", person: "andrej_babis",    party: "ANO",       from: "2025-12-09", to: null,       sources: ["vlada", "wikiPM"] },
+  { office: "pm", person: "petr_fiala",      party: "ODS",       from: "2021-12-17", to: "2025-12-09", sources: ["wikiPM"] },
+  { office: "pm", person: "andrej_babis",    party: "ANO",       from: "2017-12-13", to: "2021-12-17", sources: ["wikiPM"], notes: "Babiš II (s důvěrou 2018–2021). Babiš I (menšinová vl.) byl jmen. 13. 12. 2017, skončil 27. 6. 2018." },
+  { office: "pm", person: "bohdan_sobotka",  party: "ČSSD",      from: "2014-01-29", to: "2017-12-13", sources: ["wikiPM"] },
+  { office: "pm", person: "jiri_rusnok",     party: "nestraník", from: "2013-07-10", to: "2014-01-29", sources: ["wikiPM"], notes: "Úřednická vláda jmenovaná prezidentem Zemanem." },
+  { office: "pm", person: "petr_necas",      party: "ODS",       from: "2010-07-13", to: "2013-07-10", sources: ["wikiPM"], notes: "Rezignoval v červnu 2013 v důsledku politického skandálu." },
+  { office: "pm", person: "jan_fischer",     party: "nestraník", from: "2009-05-08", to: "2010-07-13", sources: ["wikiPM"], notes: "Přechodná úřednická vláda po pádu Topolánkovy vlády." },
+  { office: "pm", person: "mirek_topolanek", party: "ODS",       from: "2006-09-04", to: "2009-05-08", sources: ["wikiPM"], notes: "Topolánek II (2007–2009) ztratil hlasování o důvěře v březnu 2009." },
+  { office: "pm", person: "jiri_paroubek",   party: "ČSSD",      from: "2005-04-25", to: "2006-09-04", sources: ["wikiPM"] },
+  { office: "pm", person: "stanislav_gross", party: "ČSSD",      from: "2004-07-26", to: "2005-04-25", sources: ["wikiPM"], notes: "Rezignoval v dubnu 2005 po kauzách spojených s financemi." },
+  { office: "pm", person: "vladimir_spidla", party: "ČSSD",      from: "2002-07-15", to: "2004-07-26", sources: ["wikiPM"], notes: "Rezignoval po špatném výsledku ČSSD ve volbách do EP v r. 2004." },
+  { office: "pm", person: "milos_zeman",     party: "ČSSD",      from: "1998-07-22", to: "2002-07-15", sources: ["wikiPM"] },
+  { office: "pm", person: "josef_tosovsky",  party: "nestraník", from: "1998-01-02", to: "1998-07-22", sources: ["wikiPM"], notes: "Přechodná vláda po odchodu Klause." },
+  { office: "pm", person: "vaclav_klaus",    party: "ODS",       from: "1993-01-01", to: "1998-01-02", sources: ["wikiPM"], notes: "Rezignoval 30. 11. 1997 po skandálu s financováním ODS." },
+
+  // ── Ministr financí ────────────────────────────────────────
+  { office: "min_finance", person: "alena_schillerova", party: "ANO",       from: "2025-12-15", to: null,       sources: ["vlada"] },
+  { office: "min_finance", person: "zbynek_stanjura",   party: "ODS",       from: "2021-12-17", to: "2025-12-09", sources: ["wikiMin"] },
+  { office: "min_finance", person: "alena_schillerova", party: "ANO",       from: "2018-06-27", to: "2021-12-17", sources: ["wikiMin"] },
+  { office: "min_finance", person: "andrej_babis",      party: "ANO",       from: "2014-01-29", to: "2017-12-13", sources: ["wikiMin"], notes: "Jako ministr financí byl v roce 2017 obviněn z dotačního podvodu (kauza Čapí hnízdo)." },
+
+  // ── Ministr zahraničí ──────────────────────────────────────
+  { office: "min_foreign", person: "petr_macinka",   party: "Motoristé sobě", from: "2025-12-15", to: null,       sources: ["vlada"] },
+  { office: "min_foreign", person: "jan_lipavsky",   party: "Piráti",         from: "2021-12-17", to: "2025-12-09", sources: ["wikiMin"] },
+  { office: "min_foreign", person: "jakub_kulhanek", party: "ČSSD",           from: "2021-01-07", to: "2021-12-17", sources: ["wikiMin"] },
+  { office: "min_foreign", person: "tomas_petricek", party: "ČSSD",           from: "2018-06-27", to: "2021-01-07", sources: ["wikiMin"] },
+
+  // ── Ministr vnitra ─────────────────────────────────────────
+  { office: "min_interior", person: "lubomir_metnar", party: "ANO",   from: "2025-12-15", to: null,       sources: ["vlada"] },
+  { office: "min_interior", person: "vit_rakusan",    party: "STAN",  from: "2021-12-17", to: "2025-12-09", sources: ["wikiMin"] },
+  { office: "min_interior", person: "jan_hamacek",    party: "ČSSD",  from: "2018-06-27", to: "2021-12-17", sources: ["wikiMin"] },
+
+  // ── Ministr obrany ─────────────────────────────────────────
+  { office: "min_defense", person: "jaromir_zuna",    party: "nestr. za SPD", from: "2025-12-15", to: null,       sources: ["vlada"] },
+  { office: "min_defense", person: "jana_cernochova", party: "ODS",           from: "2021-12-17", to: "2025-12-09", sources: ["wikiMin"] },
+  { office: "min_defense", person: "lubomir_metnar",  party: "ANO",           from: "2018-06-27", to: "2021-12-17", sources: ["wikiMin"] },
+
+  // ── Ministr zdravotnictví ──────────────────────────────────
+  { office: "min_health", person: "adam_vojtech",  party: "nestr. za ANO", from: "2025-12-15", to: null,       sources: ["vlada"] },
+  { office: "min_health", person: "vlastimil_valek", party: "TOP 09",       from: "2021-12-17", to: "2025-12-09", sources: ["wikiHltMin"] },
+  { office: "min_health", person: "adam_vojtech",  party: "nestr. za ANO", from: "2017-12-13", to: "2021-03-09", sources: ["wikiMin"], notes: "Odvolán v březnu 2021; v roce 2020 na několik měsíců nahrazen Prymulou a Blatným." },
+
+  // ── Průmysl, doprava, spravedlnost, školství, práce, zemědělství, kultura, místní rozvoj, životní prostředí, sport ──
+  { office: "min_industry",  person: "karel_havlicek",   party: "ANO",                      from: "2025-12-15", to: null, sources: ["vlada"] },
+  { office: "min_transport", person: "ivan_bednarik",    party: "nestr. za SPD",             from: "2025-12-15", to: null, sources: ["vlada"] },
+  { office: "min_justice",   person: "jeronym_tejc",     party: "nestr. za ANO",             from: "2025-12-15", to: null, sources: ["vlada"] },
+  { office: "min_edu",       person: "robert_plaga",     party: "nestr. za ANO",             from: "2025-12-15", to: null, sources: ["vlada"] },
+  { office: "min_labor",     person: "ales_juchelka",    party: "ANO",                       from: "2025-12-15", to: null, sources: ["vlada"] },
+  { office: "min_agri",      person: "martin_sebestyan", party: "nestr. za SPD",             from: "2025-12-15", to: null, sources: ["vlada"] },
+  { office: "min_culture",   person: "oto_klempir",      party: "nestr. za Motoristé sobě",  from: "2025-12-15", to: null, sources: ["vlada"] },
+  { office: "min_dev",       person: "zuzana_mrazova",   party: "ANO",                       from: "2025-12-15", to: null, sources: ["vlada"] },
+  { office: "min_env",       person: "igor_cerveny",     party: "Motoristé sobě",            from: "2026-02-23", to: null, sources: ["vlada"] },
+  { office: "min_sport",     person: "boris_stastny",    party: "Motoristé sobě",            from: "2025-12-15", to: null, sources: ["vlada"] },
+
+
+  // ── Ministr financí – kompletní historie od 1998 ──────────
+  { office: "min_finance", person: "ivo_svoboda",       party: "ČSSD",       from: "1998-07-22", to: "1999-07-20", sources: ["wikiFinMin"] },
+  { office: "min_finance", person: "pavel_mertlik",     party: "ČSSD",       from: "1999-07-21", to: "2001-04-12", sources: ["wikiFinMin"] },
+  { office: "min_finance", person: "jiri_rusnok",       party: "ČSSD",       from: "2001-04-13", to: "2002-07-15", sources: ["wikiFinMin"] },
+  { office: "min_finance", person: "bohdan_sobotka",    party: "ČSSD",       from: "2002-07-15", to: "2006-09-04", sources: ["wikiFinMin"], notes: "Ministerstvo financí vedl napříč vládami Špidly, Grosse i Paroubka." },
+  { office: "min_finance", person: "vlastimil_tlusty",  party: "ODS",        from: "2006-09-04", to: "2007-01-09", sources: ["wikiFinMin"], notes: "Topolánek I (přechodná vláda)." },
+  { office: "min_finance", person: "miroslav_kalousek", party: "KDU-ČSL",    from: "2007-01-09", to: "2009-05-08", sources: ["wikiFinMin"], notes: "Topolánek II." },
+  { office: "min_finance", person: "eduard_janota",     party: "nestraník",  from: "2009-05-08", to: "2010-07-13", sources: ["wikiFinMin"], notes: "Fischerova úřednická vláda." },
+  { office: "min_finance", person: "miroslav_kalousek", party: "TOP 09",     from: "2010-07-13", to: "2013-07-10", sources: ["wikiFinMin"], notes: "Nečasova vláda. Kalousek v roce 2009 spoluzaložil TOP 09 a opustil KDU-ČSL." },
+  { office: "min_finance", person: "jan_fischer",       party: "nestraník",  from: "2013-07-10", to: "2014-01-29", sources: ["wikiFinMin"], notes: "Rusnokova přechodná vláda." },
+  { office: "min_finance", person: "andrej_babis",      party: "ANO",        from: "2014-01-29", to: "2017-05-24", sources: ["wikiFinMin"], notes: "Sobotkova vláda. Odvolán PM Sobotkou pro střet zájmů (kauza Čapí hnízdo)." },
+  { office: "min_finance", person: "ivan_pilny",        party: "ANO",        from: "2017-05-24", to: "2017-12-13", sources: ["wikiFinMin"], notes: "Sobotkova vláda po odvolání Babiše." },
+
+  // ── Ministr zahraničí – od 2010 ────────────────────────────
+  { office: "min_foreign", person: "karel_schwarzenberg", party: "TOP 09",   from: "2010-07-13", to: "2013-07-10", sources: ["wikiFgnMin"], notes: "Nečasova vláda. Dříve ministr jako nestr. za Zelené v Topolánkově vládě (2007–2009)." },
+  { office: "min_foreign", person: "jan_kohout",        party: "nestraník",  from: "2013-07-10", to: "2014-01-29", sources: ["wikiFgnMin"], notes: "Rusnokova přechodná vláda." },
+  { office: "min_foreign", person: "lubomir_zaoralek",  party: "ČSSD",       from: "2014-01-29", to: "2017-12-13", sources: ["wikiFgnMin"], notes: "Sobotkova vláda." },
+  { office: "min_foreign", person: "martin_stropnicky", party: "ANO",        from: "2017-12-13", to: "2018-06-27", sources: ["wikiFgnMin"], notes: "Babiš I (menšinová vláda)." },
+  { office: "min_foreign", person: "tomas_petricek",    party: "ČSSD",       from: "2018-10-16", to: "2021-04-12", sources: ["wikiFgnMin"], notes: "Babiš II. Petříček nahradil Hamáčka (který post vedl krátce v červnu–říjnu 2018)." },
+  { office: "min_foreign", person: "jakub_kulhanek",    party: "ČSSD",       from: "2021-04-21", to: "2021-12-17", sources: ["wikiFgnMin"], notes: "Babiš II, po odvolání Petříčka." },
+
+  // ── Ministr vnitra – od 2006 ───────────────────────────────
+  { office: "min_interior", person: "ivan_langer",      party: "ODS",        from: "2006-09-04", to: "2009-05-08", sources: ["wikiIntMin"], notes: "Topolánek I a II." },
+  { office: "min_interior", person: "martin_pecina",    party: "nestraník",  from: "2009-05-08", to: "2010-07-13", sources: ["wikiIntMin"], notes: "Fischerova úřednická vláda." },
+  { office: "min_interior", person: "radek_john",       party: "VV",         from: "2010-07-13", to: "2011-04-21", sources: ["wikiIntMin"], notes: "Nečasova vláda; Věci veřejné. Rezignoval." },
+  { office: "min_interior", person: "jan_kubice",       party: "nestr./LIDEM", from: "2011-04-21", to: "2013-07-10", sources: ["wikiIntMin"], notes: "Nečasova vláda." },
+  { office: "min_interior", person: "martin_pecina",    party: "nestraník",  from: "2013-07-10", to: "2014-01-29", sources: ["wikiIntMin"], notes: "Rusnokova přechodná vláda." },
+  { office: "min_interior", person: "milan_chovanec",   party: "ČSSD",       from: "2014-01-29", to: "2017-12-13", sources: ["wikiIntMin"], notes: "Sobotkova vláda." },
+  { office: "min_interior", person: "lubomir_metnar",   party: "nestr./ANO", from: "2017-12-13", to: "2018-06-27", sources: ["wikiIntMin"], notes: "Babiš I (menšinová vláda)." },
+  { office: "min_interior", person: "jan_hamacek",      party: "ČSSD",       from: "2018-06-27", to: "2021-12-17", sources: ["wikiIntMin"], notes: "Babiš II." },
+
+  // ── Ministr obrany – od 2009 ───────────────────────────────
+  { office: "min_defense", person: "martin_bartak",     party: "nestr./ODS", from: "2009-05-08", to: "2010-07-13", sources: ["wikiDefMin"], notes: "Fischerova úřednická vláda." },
+  { office: "min_defense", person: "alexandr_vondra",   party: "ODS",        from: "2010-07-13", to: "2012-12-07", sources: ["wikiDefMin"], notes: "Nečasova vláda; rezignoval kvůli korupční kauze." },
+  { office: "min_defense", person: "vlastimil_picek",   party: "nestr./ODS", from: "2013-03-19", to: "2014-01-29", sources: ["wikiDefMin"], notes: "Konec Nečasovy vlády + Rusnokova přechodná vláda." },
+  { office: "min_defense", person: "martin_stropnicky", party: "ANO",        from: "2014-01-29", to: "2017-12-13", sources: ["wikiDefMin"], notes: "Sobotkova vláda." },
+  { office: "min_defense", person: "karla_slechtova",   party: "nestr./ANO", from: "2017-12-13", to: "2018-06-27", sources: ["wikiDefMin"], notes: "Babiš I (menšinová vláda)." },
+  { office: "min_defense", person: "lubomir_metnar",    party: "nestr./ANO", from: "2018-06-27", to: "2021-12-17", sources: ["wikiDefMin"], notes: "Babiš II; poté přešel na ministerstvo vnitra v Babišově III. vládě." },
+
+  // ── Ministr zdravotnictví – od 2016 ────────────────────────
+  { office: "min_health", person: "miloslav_ludvik",    party: "ČSSD",       from: "2016-12-01", to: "2017-12-13", sources: ["wikiHltMin"], notes: "Sobotkova vláda (závěrečné období)." },
+  { office: "min_health", person: "adam_vojtech",       party: "nestr./ANO", from: "2017-12-13", to: "2020-09-21", sources: ["wikiHltMin"], notes: "Babiš I a II. Rezignoval pod tlakem v době COVID-19." },
+  { office: "min_health", person: "roman_prymula",      party: "nestr./ANO", from: "2020-09-21", to: "2020-10-29", sources: ["wikiHltMin"], notes: "Rezignoval po zveřejnění fotografií porušujících jeho vlastní proticovidová opatření." },
+  { office: "min_health", person: "jan_blatny",         party: "nestr./ANO", from: "2020-10-29", to: "2021-04-07", sources: ["wikiHltMin"] },
+  { office: "min_health", person: "petr_arenberger",    party: "nestr./ANO", from: "2021-04-07", to: "2021-05-26", sources: ["wikiHltMin"], notes: "Rezignoval kvůli kauze střetu zájmů (nezveřejněný majetek)." },
+  { office: "min_health", person: "adam_vojtech",       party: "nestr./ANO", from: "2021-05-26", to: "2021-12-17", sources: ["wikiHltMin"], notes: "Babiš II; druhé funkční období Vojtěcha." },
+
+  // ── Hejtmani / Primátor Prahy ──────────────────────────────
+  { office: "gov_pr",  person: "bohuslav_svoboda",  party: "ODS",                            from: "2023-10-01", to: null, sources: ["kraj_pr"] },
+  { office: "gov_sc",  person: "petra_peckova",     party: "STAN",                           from: "2020-11-01", to: null, sources: ["kraj_sc"] },
+  { office: "gov_jc",  person: "martin_kuba",       party: "nestr. (dříve ODS)",             from: "2020-11-01", to: null, sources: ["kraj_jc"] },
+  { office: "gov_pl",  person: "kamal_farhan",      party: "ANO",                            from: "2024-11-01", to: null, sources: ["kraj_pl"] },
+  { office: "gov_kv",  person: "petr_kubis",        party: "ANO",                            from: "2025-01-01", to: null, sources: ["kraj_kv"] },
+  { office: "gov_ul",  person: "richard_brabec",    party: "ANO",                            from: "2024-11-01", to: null, sources: ["kraj_ul"] },
+  { office: "gov_lb",  person: "martin_puta",       party: "SLK",                            from: "2012-11-01", to: null, sources: ["kraj_lb"] },
+  { office: "gov_hk",  person: "petr_koleta",       party: "ANO",                            from: "2024-11-01", to: null, sources: ["kraj_hk"] },
+  { office: "gov_pa",  person: "martin_netolicky",  party: "nestr. (dříve SOCDEM)",          from: "2012-11-01", to: null, sources: ["kraj_pa"] },
+  { office: "gov_vy",  person: "martin_kukla",      party: "ANO",                            from: "2024-11-01", to: null, sources: ["kraj_vy"] },
+  { office: "gov_jm",  person: "jan_grolich",       party: "KDU-ČSL",                        from: "2020-11-01", to: null, sources: ["kraj_jm"] },
+  { office: "gov_ol",  person: "ladislav_oklestek", party: "ANO",                            from: "2024-11-01", to: null, sources: ["kraj_ol"] },
+  { office: "gov_msk", person: "josef_belica",      party: "ANO",                            from: "2024-11-01", to: null, sources: ["kraj_msk"] },
+  { office: "gov_zl",  person: "radim_holis",       party: "ANO",                            from: "2020-11-01", to: null, sources: ["kraj_zl"] },
+];
+
+// ═══════════════════════════════════════════════════════════════
+//  HELPERS
+// ═══════════════════════════════════════════════════════════════
+
+const PARTY_COLORS = {
+  "ANO": "#1565c0", "ODS": "#003e8a", "KDU-ČSL": "#f9a825", "STAN": "#43a047",
+  "Motoristé sobě": "#e64a19", "SPD": "#7b1fa2", "ČSSD": "#c62828", "SOCDEM": "#c62828",
+  "Piráti": "#37474f", "TOP 09": "#7b1fa2", "SLK": "#0277bd",
+  "nestraník": "#546e7a", "nestr.": "#546e7a",
+};
+function partyColor(p) {
+  if (!p) return "#546e7a";
+  for (const [k, v] of Object.entries(PARTY_COLORS)) if (p.includes(k)) return v;
+  return "#546e7a";
+}
+function partyCanon(p) {
+  // Canonical party name for grouping
+  if (!p) return "nestraník";
+  if (p.includes("ANO")) return "ANO";
+  if (p.includes("ODS")) return "ODS";
+  if (p.includes("KDU")) return "KDU-ČSL";
+  if (p.includes("STAN")) return "STAN";
+  if (p.includes("Motoristé")) return "Motoristé sobě";
+  if (p.includes("SPD")) return "SPD";
+  if (p.includes("ČSSD") || p.includes("SOCDEM")) return "ČSSD/SOCDEM";
+  if (p.includes("Piráti")) return "Piráti";
+  if (p.includes("TOP")) return "TOP 09";
+  if (p.includes("SLK")) return "SLK";
+  return "nestraník / nezávislí";
+}
+function formatDate(d) {
+  if (!d) return "nyní";
+  return new Date(d).toLocaleDateString("cs-CZ", { day: "numeric", month: "long", year: "numeric" });
+}
+function yearSpan(from, to) {
+  const f = from ? from.slice(0, 4) : "?";
+  const t = to ? to.slice(0, 4) : "nyní";
+  return f === t ? f : `${f} – ${t}`;
+}
+function sourcesHtml(keys) {
+  if (!keys || !keys.length) return "";
+  const links = keys.map(k => {
+    const s = SOURCES[k];
+    return s ? `<a href="${s.url}" target="_blank">${s.name}</a>` : k;
+  }).join(", ");
+  return `<div class="tl-source">📎 Zdroj: ${links}</div>`;
+}
+
+// Derived: current terms only
+const CURRENT_TERMS = TERMS.filter(t => !t.to);
+
+// ═══════════════════════════════════════════════════════════════
+//  TAB SYSTEM
+// ═══════════════════════════════════════════════════════════════
+
 let leafletMap = null;
-let selectedPerson = null;
+let activeOffice = null;
 
-// Populate party filter
-const parties = [...new Set(ALL_PEOPLE.map(p => {
-  const c = partyColor(p.party);
-  return p.party;
-}))].sort();
+function showTab(name) {
+  document.querySelectorAll(".view").forEach(v => v.classList.remove("active"));
+  document.querySelectorAll(".nav-btn").forEach(b => b.classList.remove("active"));
+  document.getElementById(`tab-${name}`).classList.add("active");
+  const idx = ["offices","people","parties","map","about"].indexOf(name);
+  document.querySelectorAll(".nav-btn")[idx]?.classList.add("active");
+  if (name === "map" && !leafletMap) setTimeout(initMap, 50);
+  if (name === "offices" && !activeOffice) renderOfficesSidebar();
+  if (name === "people") renderPeople();
+  if (name === "parties") renderParties();
+}
 
-const partySelect = document.getElementById("partyFilter");
-parties.forEach(p => {
-  const o = document.createElement("option");
-  o.value = p;
-  o.textContent = partyShort(p);
-  partySelect.appendChild(o);
-});
-
-function getFiltered() {
-  const q = document.getElementById("search").value.toLowerCase().trim();
-  const level = document.getElementById("levelFilter").value;
-  const party = document.getElementById("partyFilter").value;
-  return ALL_PEOPLE.filter(p => {
-    const mQ = !q || p.name.toLowerCase().includes(q) || p.role.toLowerCase().includes(q) || p.party.toLowerCase().includes(q) || (p.region || "").toLowerCase().includes(q);
-    const mL = !level || p.level === level;
-    const mP = !party || p.party === party;
-    return mQ && mL && mP;
+function onSearch(q) {
+  const lq = q.toLowerCase();
+  // Highlight matching cards in people tab
+  document.querySelectorAll(".card").forEach(c => {
+    c.style.display = c.textContent.toLowerCase().includes(lq) ? "" : "none";
   });
 }
 
-// ─────────────────────────────────────────────
-//  RENDERING
-// ─────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════
+//  OFFICES TAB
+// ═══════════════════════════════════════════════════════════════
 
-function personCard(p) {
-  const color = partyColor(p.party);
-  const year = p.since ? p.since.slice(0, 4) : "";
-  const regionLabel = p.region ? `<div class="card-role" style="font-size:.68rem;color:#6b93a8">${p.region}</div>` : "";
-  const avatarHtml = p.photo
-    ? `<img class="avatar" src="${p.photo}" alt="" onerror="this.style.display='none'">`
-    : `<div class="avatar-placeholder">${p.emoji || "👤"}</div>`;
-  return `
-    <div class="card" onclick="openModal('${p.id}')">
-      ${avatarHtml}
-      <div class="card-info">
-        <div class="card-name">${p.name}</div>
-        <div class="card-role">${p.role}</div>
-        ${regionLabel}
-        <div class="card-meta">
-          <span class="party-badge" style="background:${color}">${partyShort(p.party)}</span>
-          ${year ? `<span class="since-tag">od ${year}</span>` : ""}
-        </div>
-      </div>
-    </div>`;
-}
-
-function renderList(filtered) {
-  const container = document.getElementById("listView");
-  const national = filtered.filter(p => p.level === "national");
-  const regional = filtered.filter(p => p.level === "regional");
-
-  const president = national.filter(p => p.id === "president");
-  const cabinet = national.filter(p => p.id !== "president");
-
+function renderOfficesSidebar() {
+  const sidebar = document.getElementById("officesSidebar");
+  const groups = [...new Set(OFFICES.map(o => o.group))];
   let html = "";
+  groups.forEach(g => {
+    html += `<div class="sidebar-group-title">${g}</div>`;
+    OFFICES.filter(o => o.group === g).forEach(o => {
+      const cur = CURRENT_TERMS.find(t => t.office === o.id);
+      const color = cur ? partyColor(cur.party) : "#546e7a";
+      html += `<div class="sidebar-item" id="si-${o.id}" onclick="selectOffice('${o.id}')">
+        <div class="dot" style="background:${color}"></div>
+        <span>${o.emoji} ${o.name}</span>
+      </div>`;
+    });
+  });
+  sidebar.innerHTML = html;
+}
 
-  if (president.length || cabinet.length) {
-    html += `<div class="level-section">
-      <div class="level-title">🇨🇿 Národní úroveň</div>
-      <div class="cards">
-        ${president.map(personCard).join("")}
-        ${cabinet.map(personCard).join("")}
+function selectOffice(officeId) {
+  activeOffice = officeId;
+  document.querySelectorAll(".sidebar-item").forEach(i => i.classList.remove("active"));
+  document.getElementById(`si-${officeId}`)?.classList.add("active");
+
+  const office = OFFICES.find(o => o.id === officeId);
+  const terms = TERMS.filter(t => t.office === officeId).sort((a, b) => (b.from || "").localeCompare(a.from || ""));
+
+  let html = `<div class="section-header">
+    <h1>${office.emoji} ${office.name}</h1>
+    ${office.description ? `<p>${office.description}</p>` : ""}
+  </div>`;
+
+  if (!terms.length) {
+    html += `<div class="empty">Žádná historická data</div>`;
+  } else {
+    html += `<div class="timeline">`;
+    terms.forEach(t => {
+      const person = PEOPLE[t.person];
+      const isCurrent = !t.to;
+      const color = partyColor(t.party);
+      const avatarHtml = person?.photo
+        ? `<img src="${person.photo}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;vertical-align:middle;margin-right:.5rem" onerror="this.style.display='none'">`
+        : "";
+      html += `<div class="tl-item ${isCurrent ? "tl-current" : ""}">
+        <div class="tl-dot" style="background:${color}"></div>
+        <div class="tl-card">
+          <div class="tl-years">${formatDate(t.from)} — ${t.to ? formatDate(t.to) : "<strong style='color:#e2e4ec'>nyní</strong>"}</div>
+          <div class="tl-name" onclick="showPersonDetail('${t.person}')">${avatarHtml}${person?.name || t.person}</div>
+          <div class="tl-party-row">
+            <span class="party-badge" style="background:${color}">${t.party}</span>
+            <span style="font-size:.7rem;color:var(--muted)">${yearSpan(t.from, t.to)}</span>
+          </div>
+          ${t.notes ? `<div class="tl-notes">${t.notes}</div>` : ""}
+          ${sourcesHtml(t.sources)}
+        </div>
+      </div>`;
+    });
+    html += `</div>`;
+  }
+
+  document.getElementById("officesPanel").innerHTML = html;
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  PEOPLE TAB
+// ═══════════════════════════════════════════════════════════════
+
+function renderPeople() {
+  const level = document.getElementById("levelFilter").value;
+  const party = document.getElementById("partyPeopleFilter").value;
+
+  // Build list of current office holders
+  let people = CURRENT_TERMS.map(t => {
+    const o = OFFICES.find(x => x.id === t.office);
+    const p = PEOPLE[t.person];
+    return { ...t, officeName: o?.name, officeLevel: o?.level, personData: p, personId: t.person };
+  });
+
+  if (level) people = people.filter(x => x.officeLevel === level);
+  if (party) people = people.filter(x => partyCanon(x.party) === party);
+
+  document.getElementById("peopleCount").textContent = `${people.length} osob`;
+
+  const grid = document.getElementById("peopleGrid");
+  grid.innerHTML = people.map(x => {
+    const color = partyColor(x.party);
+    const ph = x.personData?.photo;
+    return `<div class="card" onclick="showPersonDetail('${x.personId}')">
+      ${ph ? `<img class="avatar" src="${ph}" onerror="this.style.display='none'">` : `<div class="avatar-ph">👤</div>`}
+      <div class="card-info">
+        <div class="name">${x.personData?.name || x.person}</div>
+        <div class="role">${x.officeName}</div>
+        <div class="meta"><span class="party-badge" style="background:${color}">${x.party}</span></div>
       </div>
     </div>`;
-  }
-
-  if (regional.length) {
-    html += `<div class="level-section">
-      <div class="level-title">🏢 Krajská úroveň – hejtmani a primátor Prahy</div>
-      <div class="cards">${regional.map(personCard).join("")}</div>
-    </div>`;
-  }
-
-  if (!filtered.length) {
-    html = `<div class="empty">Žádné výsledky 🔍</div>`;
-  }
-
-  container.innerHTML = html;
+  }).join("") || `<div class="empty">Žádné výsledky</div>`;
 }
+
+// Show person career detail (opens offices tab with person view)
+function showPersonDetail(personId) {
+  const person = PEOPLE[personId];
+  if (!person) return;
+
+  showTab("offices");
+
+  const personTerms = TERMS.filter(t => t.person === personId)
+    .sort((a, b) => (b.from || "").localeCompare(a.from || ""));
+
+  let html = `<div class="section-header"><h1>👤 ${person.name}</h1></div>`;
+  html += `<div class="timeline">`;
+  personTerms.forEach(t => {
+    const office = OFFICES.find(o => o.id === t.office);
+    const color = partyColor(t.party);
+    const isCurrent = !t.to;
+    html += `<div class="tl-item ${isCurrent ? "tl-current" : ""}">
+      <div class="tl-dot" style="background:${color}"></div>
+      <div class="tl-card">
+        <div class="tl-years">${formatDate(t.from)} — ${t.to ? formatDate(t.to) : "<strong style='color:#e2e4ec'>nyní</strong>"}</div>
+        <div class="tl-name" onclick="selectOffice('${t.office}')" style="cursor:pointer">${office?.emoji} ${office?.name || t.office}</div>
+        <div class="tl-party-row">
+          <span class="party-badge" style="background:${color}">${t.party}</span>
+          <span style="font-size:.7rem;color:var(--muted)">${yearSpan(t.from, t.to)}</span>
+        </div>
+        ${t.notes ? `<div class="tl-notes">${t.notes}</div>` : ""}
+        ${sourcesHtml(t.sources)}
+      </div>
+    </div>`;
+  });
+  html += `</div>`;
+  if (person.link) html += `<div style="margin-top:1rem"><a href="${person.link}" target="_blank" style="color:#4a90d9;font-size:.82rem">Více informací →</a></div>`;
+
+  document.getElementById("officesPanel").innerHTML = html;
+  document.querySelectorAll(".sidebar-item").forEach(i => i.classList.remove("active"));
+  activeOffice = null;
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  PARTIES TAB
+// ═══════════════════════════════════════════════════════════════
+
+function renderParties() {
+  // Group current terms by canonical party
+  const byParty = {};
+  CURRENT_TERMS.forEach(t => {
+    const canon = partyCanon(t.party);
+    if (!byParty[canon]) byParty[canon] = [];
+    byParty[canon].push(t);
+  });
+
+  const sorted = Object.entries(byParty).sort((a, b) => b[1].length - a[1].length);
+
+  document.getElementById("partyGrid").innerHTML = sorted.map(([party, terms]) => {
+    const color = partyColor(party);
+    return `<div class="party-card" onclick="showPartyDetail('${party}', this)">
+      <div class="party-name" style="color:${color}">${party}</div>
+      <div class="party-stats">${terms.length} aktuálních úřadů</div>
+    </div>`;
+  }).join("");
+
+  document.getElementById("partyDetail").innerHTML = "";
+}
+
+function showPartyDetail(party, el) {
+  document.querySelectorAll(".party-card").forEach(c => c.classList.remove("active"));
+  el.classList.add("active");
+
+  const terms = CURRENT_TERMS.filter(t => partyCanon(t.party) === party)
+    .sort((a, b) => {
+      const oa = OFFICES.find(o => o.id === a.office);
+      const ob = OFFICES.find(o => o.id === b.office);
+      return (oa?.level || "").localeCompare(ob?.level || "");
+    });
+
+  const color = partyColor(party);
+  let html = `<div class="party-detail">
+    <div style="font-size:1rem;font-weight:700;color:${color};margin-bottom:.8rem">${party} — ${terms.length} aktuálních úřadů</div>`;
+
+  terms.forEach(t => {
+    const office = OFFICES.find(o => o.id === t.office);
+    const person = PEOPLE[t.person];
+    html += `<div class="office-row">
+      <span class="office-name">${office?.emoji || ""} ${office?.name || t.office}</span>
+      <span class="office-person" onclick="showPersonDetail('${t.person}')">${person?.name || t.person}</span>
+    </div>`;
+  });
+
+  html += `</div>`;
+  document.getElementById("partyDetail").innerHTML = html;
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  MAP TAB
+// ═══════════════════════════════════════════════════════════════
 
 function initMap() {
   leafletMap = L.map("map", { center: [49.8, 15.5], zoom: 7 });
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-    attribution: '© <a href="https://osm.org/copyright">OpenStreetMap</a>',
-    maxZoom: 19,
+    attribution: '© <a href="https://osm.org/copyright">OpenStreetMap</a>', maxZoom: 19,
   }).addTo(leafletMap);
-  renderMap(getFiltered());
-}
 
-function renderMap(filtered) {
-  if (!leafletMap) return;
-  leafletMap.eachLayer(l => { if (l instanceof L.Marker) leafletMap.removeLayer(l); });
-
-  // Group national-level people at one marker per coords cluster
-  const national = filtered.filter(p => p.level === "national");
-  if (national.length) {
-    const color = "#d4373f";
-    const icon = L.divIcon({
-      html: `<div style="width:16px;height:16px;border-radius:50%;background:${color};border:2.5px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.5)"></div>`,
-      className: "", iconAnchor: [8, 8],
-    });
-    const names = national.slice(0, 6).map(p => `<div class="popup-film" style="padding:.18rem 0;font-size:.78rem;cursor:pointer;color:#ccc" onclick="window._openPerson('${p.id}')">${p.name}</div>`).join("");
-    const more = national.length > 6 ? `<div style="font-size:.7rem;color:#888">+ ${national.length - 6} dalších…</div>` : "";
-    const popup = `<div><div class="popup-name">Národní vláda</div><div class="popup-role" style="margin-bottom:.35rem">Praha · ${national.length} osob</div>${names}${more}</div>`;
-    L.marker([50.08, 14.43], { icon }).addTo(leafletMap).bindPopup(popup, { maxWidth: 260 });
-  }
+  // National marker
+  const natTerms = CURRENT_TERMS.filter(t => OFFICES.find(o => o.id === t.office)?.level === "national");
+  const natIcon = L.divIcon({ html: `<div style="width:18px;height:18px;border-radius:50%;background:#d4373f;border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.6)"></div>`, className: "", iconAnchor: [9, 9] });
+  const natList = natTerms.slice(0, 6).map(t => {
+    const p = PEOPLE[t.person];
+    return `<div style="padding:.2rem 0;font-size:.78rem;cursor:pointer;color:#ddd" onclick="window._person('${t.person}')">${p?.name || t.person}</div>`;
+  }).join("");
+  L.marker([50.08, 14.43], { icon: natIcon })
+    .addTo(leafletMap)
+    .bindPopup(`<div><b style="color:#fff">Národní instituce · Praha</b><br><small style="color:#aaa">${natTerms.length} úřadů</small>${natList}</div>`, { maxWidth: 240 });
 
   // Regional markers
-  filtered.filter(p => p.level === "regional").forEach(p => {
-    const color = partyColor(p.party);
-    const icon = L.divIcon({
-      html: `<div style="width:14px;height:14px;border-radius:50%;background:${color};border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.5)"></div>`,
-      className: "", iconAnchor: [7, 7],
+  CURRENT_TERMS
+    .filter(t => OFFICES.find(o => o.id === t.office)?.level === "regional")
+    .forEach(t => {
+      const office = OFFICES.find(o => o.id === t.office);
+      const person = PEOPLE[t.person];
+      if (!office?.coords) return;
+      const color = partyColor(t.party);
+      const icon = L.divIcon({ html: `<div style="width:14px;height:14px;border-radius:50%;background:${color};border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.5)"></div>`, className: "", iconAnchor: [7, 7] });
+      L.marker(office.coords, { icon })
+        .addTo(leafletMap)
+        .bindPopup(`<div>
+          <b style="color:#fff">${person?.name || t.person}</b><br>
+          <span style="color:#aaa;font-size:.78rem">${office.name}</span><br>
+          <span class="party-badge" style="background:${color};font-size:.65rem;padding:.1rem .3rem;border-radius:3px;margin-top:.3rem;display:inline-block">${t.party}</span><br>
+          <a href="${person?.link || '#'}" target="_blank" style="color:#4a90d9;font-size:.7rem">Více →</a>
+        </div>`, { maxWidth: 200 })
+        .on("click", () => setTimeout(() => {}, 0));
     });
-    const popup = `<div>
-      <div class="popup-name">${p.name}</div>
-      <div class="popup-role">${p.role}</div>
-      <div style="margin:.3rem 0"><span style="background:${color};color:#fff;font-size:.65rem;font-weight:700;padding:.1rem .35rem;border-radius:4px">${partyShort(p.party)}</span></div>
-      <a class="popup-link" href="${p.link}" target="_blank">Oficiální stránka →</a>
-    </div>`;
-    L.marker(p.coords, { icon }).addTo(leafletMap)
-      .bindPopup(popup, { maxWidth: 220 })
-      .on("click", () => openModal(p.id));
-  });
 
-  window._openPerson = id => {
+  window._person = id => {
     document.querySelectorAll(".leaflet-popup-close-button").forEach(b => b.click());
-    openModal(id);
+    showPersonDetail(id);
   };
 }
 
-function render() {
-  const filtered = getFiltered();
-  document.getElementById("count").textContent = filtered.length + " / " + ALL_PEOPLE.length;
-  if (currentView === "list") renderList(filtered);
-  else if (currentView === "map" && leafletMap) renderMap(filtered);
-}
-
-function setView(v) {
-  currentView = v;
-  document.getElementById("listView").style.display = v === "list" ? "block" : "none";
-  document.getElementById("mapView").style.display  = v === "map"  ? "block" : "none";
-  document.getElementById("btnList").classList.toggle("active", v === "list");
-  document.getElementById("btnMap").classList.toggle("active", v === "map");
-  if (v === "map" && !leafletMap) setTimeout(initMap, 50);
-  else if (v === "map" && leafletMap) { leafletMap.invalidateSize(); renderMap(getFiltered()); }
-  else render();
-}
-
-// ─────────────────────────────────────────────
-//  MODAL
-// ─────────────────────────────────────────────
-
-function openModal(id) {
-  const p = ALL_PEOPLE.find(x => x.id === id);
-  if (!p) return;
-  selectedPerson = p;
-
-  // Avatar
-  const avatarEl = document.getElementById("mAvatar");
-  avatarEl.innerHTML = p.photo
-    ? `<img class="modal-avatar" src="${p.photo}" alt="" onerror="this.outerHTML='<div class=\\'modal-avatar-ph\\'>${p.emoji||'👤'}</div>'">`
-    : `<div class="modal-avatar-ph">${p.emoji || "👤"}</div>`;
-
-  document.getElementById("mName").textContent = p.name;
-  document.getElementById("mRole").textContent = p.role + (p.region ? ` · ${p.region}` : "");
-
-  // Details rows
-  const color = partyColor(p.party);
-  const sinceFormatted = p.since ? new Date(p.since).toLocaleDateString("cs-CZ", { day: "numeric", month: "long", year: "numeric" }) : "—";
-  document.getElementById("mDetails").innerHTML = `
-    <div class="modal-section-title">Informace</div>
-    <div class="modal-row"><span class="label">Strana</span><span><span class="party-badge" style="background:${color}">${partyShort(p.party)}</span></span></div>
-    <div class="modal-row"><span class="label">Ve funkci od</span><span>${sinceFormatted}</span></div>
-    ${p.region ? `<div class="modal-row"><span class="label">Kraj / obvod</span><span>${p.region}</span></div>` : ""}
-  `;
-
-  // History (only for positions that have it)
-  const historyKey = p.id === "president" ? "Prezident ČR"
-    : (p.role.toLowerCase().includes("předseda vlády") ? "Předseda vlády" : null);
-  const histEl = document.getElementById("mHistory");
-  if (historyKey && HISTORY[historyKey]) {
-    histEl.innerHTML = `<div class="modal-section-title">Předchůdci</div>` +
-      HISTORY[historyKey].map(h => `
-        <div class="history-item">
-          <span class="hist-years">${h.years}</span>
-          <span>
-            <span class="hist-name">${h.name}</span>
-            <span class="hist-party"> · ${h.party}</span>
-            ${h.notes ? `<br><span style="font-size:.7rem;color:var(--muted)">${h.notes}</span>` : ""}
-          </span>
-        </div>`).join("");
-  } else {
-    histEl.innerHTML = "";
-  }
-
-  // Actions
-  document.getElementById("mActions").innerHTML =
-    `<a class="btn btn-primary" href="${p.link}" target="_blank">Oficiální stránka ↗</a>`;
-
-  document.getElementById("modalBackdrop").classList.add("open");
-}
-
-function closeModal(e) {
-  if (e && e.target !== document.getElementById("modalBackdrop")) return;
-  document.getElementById("modalBackdrop").classList.remove("open");
-}
-document.addEventListener("keydown", e => { if (e.key === "Escape") document.getElementById("modalBackdrop").classList.remove("open"); });
-
-// ─────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════
 //  INIT
-// ─────────────────────────────────────────────
-render();
+// ═══════════════════════════════════════════════════════════════
+
+// Populate party filter for People tab
+const allParties = [...new Set(CURRENT_TERMS.map(t => partyCanon(t.party)))].sort();
+const pf = document.getElementById("partyPeopleFilter");
+allParties.forEach(p => { const o = document.createElement("option"); o.value = o.textContent = p; pf.appendChild(o); });
+
+// Init first tab
+renderOfficesSidebar();
+renderPeople();
 </script>
 </body>
 </html>
